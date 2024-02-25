@@ -19,7 +19,8 @@ s32 osAiSetNextBuffer(void* buf, u32 size) {
 
     // Originally a call to __osAiDeviceBusy
     status = IO_READ(AI_STATUS_REG);
-    if (status & AI_STATUS_FIFO_FULL) {
+    // 2S2H [port] This was AI_STATUS_FIFO_FULL
+    if (status & AI_STATUS_AI_FULL) {
         return -1;
     }
 

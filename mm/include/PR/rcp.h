@@ -1,6 +1,23 @@
 #ifndef PR_RCP_H
 #define PR_RCP_H
+#include <libultraship/libultra/rcp.h>
 
+// The original MM project doesn't have rsp.h, instead including them here.
+#include <libultraship/libultra/rsp.h>
+// Most of these flags are defined in the LUS. This causes a lot of warnings as
+// it will warn for each define. these are not included in their version so we
+// must define them our self.
+#define IO_READ(addr) (*(vu32*)PHYS_TO_K1(addr))
+#define IO_WRITE(addr, data) (*(vu32*)PHYS_TO_K1(addr) = (u32)(data))
+
+#define CHNL_ERR_NORESP 0x80    /* Bit 7 (Rx): No response error */
+#define CHNL_ERR_OVERRUN 0x40   /* Bit 6 (Rx): Overrun error */
+#define CHNL_ERR_FRAME 0x80     /* Bit 7 (Tx): Frame error */
+#define CHNL_ERR_COLLISION 0x40 /* Bit 6 (Tx): Collision error */
+
+#define CHNL_ERR_MASK 0xC0 /* Bit 6-7: channel errors */
+
+#if 0
 /**
  * PIF Physical memory map (total size = 2 KB)
  *
@@ -269,5 +286,5 @@
 
 #define IO_READ(addr)       (*(vu32*)PHYS_TO_K1(addr))
 #define IO_WRITE(addr,data) (*(vu32*)PHYS_TO_K1(addr)=(u32)(data))
-
+#endif
 #endif

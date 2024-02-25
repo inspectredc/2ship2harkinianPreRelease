@@ -4,11 +4,11 @@
 #include "libc/stddef.h"
 #include "PR/ultratypes.h"
 
-#define DECLARE_SEGMENT(name) \
+#define DECLARE_SEGMENT(name) 
     //    extern u8 _##name##SegmentStart[]; \
 //    extern u8 _##name##SegmentEnd[];
 
-#define DECLARE_ROM_SEGMENT(name) \
+#define DECLARE_ROM_SEGMENT(name) 
     //    extern u8 _##name##SegmentRomStart[]; \
 //    extern u8 _##name##SegmentRomEnd[];
 
