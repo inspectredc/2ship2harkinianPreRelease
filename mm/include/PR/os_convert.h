@@ -2,8 +2,7 @@
 #define PR_CONVERT_H
 
 #include "libc/stdint.h"
-#include "libultraship/libultra/convert.h"
-#if 0
+
 #define OS_CLOCK_RATE           62500000LL
 #define OS_CPU_COUNTER          (OS_CLOCK_RATE*3/4)
 
@@ -25,5 +24,5 @@
 /* Functions */
 
 extern uintptr_t osVirtualToPhysical(void*);
-#endif
+
 #endif

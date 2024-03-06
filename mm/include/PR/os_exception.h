@@ -2,8 +2,7 @@
 #define PR_OS_EXCEPTION_H
 
 #include "ultratypes.h"
-#include"libultraship/libultra/exception.h"
-#if 0
+
 
 typedef u32 OSIntMask;
 typedef u32 OSHWIntr;
@@ -35,7 +34,7 @@ typedef u32 OSHWIntr;
 #define RCP_IMASK       0x003F0000
 #define RCP_IMASKSHIFT  16
 
-#endif
+
 //OSIntMask osGetIntMask(void);
 //OSIntMask osSetIntMask(OSIntMask im);
 
