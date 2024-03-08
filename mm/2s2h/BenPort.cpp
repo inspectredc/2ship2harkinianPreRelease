@@ -660,6 +660,7 @@ extern "C" uint32_t ResourceMgr_GetGamePlatform(int index) {
         case OOT_PAL_GC_DBG2:
         case OOT_PAL_GC_MQ_DBG:
         case MM_NTSC_US_GC:
+        case MM_NTSC_JP_GC:
             return GAME_PLATFORM_GC;
     }
 }
@@ -677,6 +678,7 @@ extern "C" uint32_t ResourceMgr_GetGameRegion(int index) {
         case OOT_NTSC_US_MQ:
         case MM_NTSC_US_10:
         case MM_NTSC_US_GC:
+        case MM_NTSC_JP_GC:
             return GAME_REGION_NTSC;
         case OOT_PAL_10:
         case OOT_PAL_11:
