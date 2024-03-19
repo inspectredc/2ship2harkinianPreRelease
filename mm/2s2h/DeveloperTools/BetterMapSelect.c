@@ -4,6 +4,7 @@
 #include "overlays/gamestates/ovl_file_choose/z_file_select.h"
 #include "overlays/gamestates/ovl_select/z_select.h"
 #include "libultraship/libultraship.h"
+#include <GameVersions.h>
 
 extern SceneSelectEntry sScenes[143];
 
@@ -17,7 +18,11 @@ void BetterMapSelect_LoadGame(MapSelectState* mapSelectState, u32 entrance, s32 
 
 void BetterMapSelect_LoadFileSelect(MapSelectState* mapSelectState) {
     STOP_GAMESTATE(&mapSelectState->state);
-    SET_NEXT_GAMESTATE(&mapSelectState->state, FileSelect_Init, sizeof(FileSelectState));
+    if (ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
+        SET_NEXT_GAMESTATE(&mapSelectState->state, FileSelect_JP_Init, sizeof(FileSelectState));
+    } else {
+        SET_NEXT_GAMESTATE(&mapSelectState->state, FileSelect_Init, sizeof(FileSelectState));
+    }
 }
 
 // 2S2H Added columns to scene table: entranceSceneId, betterMapSelectIndex, humanName

@@ -11,6 +11,8 @@
 //extern "C" MessageTableEntry* sNesMessageEntryTablePtr;
 //extern "C" MessageTableEntry* sStaffMessageEntryTablePtr;
 
+extern "C" MessageTableEntry* sJPMessageEntryTablePtr;
+
 MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
     auto file = std::static_pointer_cast<LUS::TextMM>(LUS::Context::GetInstance()->GetResourceManager()->LoadResource(filePath));
 
@@ -50,6 +52,10 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
     }
 
     return table;
+}
+
+extern "C" void OTRJPFontMessage_Init() {
+    sJPMessageEntryTablePtr = OTRMessage_LoadTable("text/message_data_static_jp/message_data_static_jp", false);
 }
 
 extern "C" void OTRMessage_Init(PlayState* play) {
