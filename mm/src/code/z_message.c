@@ -15,6 +15,8 @@
 #include <string.h>
 #include <GameVersions.h>
 
+extern MessageTableEntry* sJPMessageEntryTablePtr;
+
 // #region 2S2H [Port] Asset tables we can pull from instead of from ROM
 #define dgEmptyTexture "__OTR__textures/virtual/gEmptyTexture"
 static const ALIGN_ASSET(2) char gEmptyTexture[] = dgEmptyTexture;
@@ -955,13 +957,18 @@ void Message_GrowTextbox(PlayState* play) {
 void Message_FindMessage(PlayState* play, u16 textId) {
     MessageContext* msgCtx = &play->msgCtx;
     Font* font = &msgCtx->font;
-    MessageTableEntry* msgEntry = msgCtx->messageEntryTable;
+    MessageTableEntry* msgEntry = sJPMessageEntryTablePtr;
     const char* segment = msgEntry->segment;
     const char* foundSegment;
     const char* nextSegment;
 
     while (msgEntry->textId != 0xFFFF) {
         if (msgEntry->textId == textId) {
+            // #region 2SH2 [Port] Just assign the msgEntry, we don't need to change the messageStart and messageEnd
+            font->messageStart = msgEntry;
+            return;
+            // #endregion
+
             foundSegment = msgEntry->segment;
             msgEntry++;
             nextSegment = msgEntry->segment;
@@ -2369,7 +2376,7 @@ void Message_Decode(PlayState* play) {
     spC0 = 0.0f;
     font->unk_11D88 = (font->unk_11D88 ^ 1) & 1;
 
-    if ((gSaveContext.options.language == LANGUAGE_JPN) && !msgCtx->textIsCredits) {
+    if ((/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) && !msgCtx->textIsCredits) {
         spD2 = 0;
         numLines = 0;
         decodedBufPos = 0;
@@ -3331,7 +3338,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
     var_fv0 = 1.0f;
 
     if (play->pauseCtx.bombersNotebookOpen) {
-        if (gSaveContext.options.language == LANGUAGE_JPN) {
+        if (/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
             msgCtx->textCharScale = 1.4f;
             msgCtx->unk11FFC = 0x1E;
             msgCtx->unk11FF8 = 0x32;
@@ -3347,7 +3354,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
         msgCtx->textCharScale = 0.85f;
         msgCtx->unk11FFC = 6;
         msgCtx->unk11FF8 = 0x14;
-    } else if (gSaveContext.options.language == LANGUAGE_JPN) {
+    } else if (/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
         msgCtx->textCharScale = 0.88f;
         msgCtx->unk11FFC = 0x12;
         msgCtx->unk11FF8 = 0x32;
@@ -3368,9 +3375,11 @@ void Message_OpenText(PlayState* play, u16 textId) {
         memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
         //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(staff_message_data_static) + font->messageStart,
         //                    font->messageEnd);
-    } else if (gSaveContext.options.language == LANGUAGE_JPN) {
+    } else if (/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
         Message_FindMessage(play, textId);
-        msgCtx->msgLength = font->messageEnd;
+        MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
+        msgCtx->msgLength = msgEntry->msgSize;
+        memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
         //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
         //                    font->messageEnd);
     } else {
@@ -3447,7 +3456,7 @@ void func_801514B0(PlayState* play, u16 arg1, u8 arg2) {
     msgCtx->textboxSkipped = false;
     msgCtx->textIsCredits = false;
 
-    if (gSaveContext.options.language == LANGUAGE_JPN) {
+    if (/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
         msgCtx->textCharScale = 0.88f;
         msgCtx->unk11FFC = 0x12;
         msgCtx->unk11FF8 = 0x32;
@@ -3467,9 +3476,11 @@ void func_801514B0(PlayState* play, u16 arg1, u8 arg2) {
 
     msgCtx->currentTextId = arg1;
 
-    if (gSaveContext.options.language == LANGUAGE_JPN) {
+    if (/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
         Message_FindMessage(play, arg1);
-        msgCtx->msgLength = font->messageEnd;
+        MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
+        msgCtx->msgLength = msgEntry->msgSize;
+        memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
         // BENTODO
         //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
         //                    font->messageEnd);
@@ -3555,6 +3566,7 @@ void Message_ContinueTextbox(PlayState* play, u16 textId) {
 }
 
 void Message_DisplaySceneTitleCard(PlayState* play, u16 textId) {
+    // return;
     MessageContext* msgCtx = &play->msgCtx;
 
     msgCtx->msgLength = 0;
@@ -4265,7 +4277,7 @@ void Message_DrawOcarinaButtons(PlayState* play, Gfx** gfxP) {
 }
 
 void Message_DrawText(PlayState* play, Gfx** gfxP) {
-    if ((gSaveContext.options.language == LANGUAGE_JPN) && !play->msgCtx.textIsCredits) {
+    if ((/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) && !play->msgCtx.textIsCredits) {
         Message_DrawTextDefault(play, gfxP);
     } else if (play->msgCtx.textIsCredits) {
         Message_DrawTextCredits(play, gfxP);
@@ -4427,7 +4439,7 @@ void Message_DrawMain(PlayState* play, Gfx** gfxP) {
             case MSGMODE_TEXT_DISPLAYING:
             case MSGMODE_TEXT_DELAYED_BREAK:
             case MSGMODE_9:
-                if ((gSaveContext.options.language == LANGUAGE_JPN) && !msgCtx->textIsCredits) {
+                if ((/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) && !msgCtx->textIsCredits) {
                     if (msgCtx->textDelay != 0) {
                         msgCtx->textDrawPos += msgCtx->textDelay;
                     }
@@ -5567,7 +5579,7 @@ void Message_Update(PlayState* play) {
 
                 msgCtx->textboxXTarget = sTextboxXPositions[var_v1];
 
-                if ((gSaveContext.options.language == LANGUAGE_JPN) && !msgCtx->textIsCredits) {
+                if ((/*gSaveContext.options.language == LANGUAGE_JPN*/ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) && !msgCtx->textIsCredits) {
                     msgCtx->unk11FFE[0] = (s16)(msgCtx->textboxYTarget + 7);
                     msgCtx->unk11FFE[1] = (s16)(msgCtx->textboxYTarget + 0x19);
                     msgCtx->unk11FFE[2] = (s16)(msgCtx->textboxYTarget + 0x2B);
@@ -6237,7 +6249,11 @@ void Message_Init(PlayState* play) {
     // #endregion
 
     font = &play->msgCtx.font;
-    Font_LoadOrderedFont(&play->msgCtx.font);
+    if (ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
+        Font_LoadOrderedFont_JP(&play->msgCtx.font);
+    } else {
+        Font_LoadOrderedFont(&play->msgCtx.font);
+    }
     font->unk_11D88 = 0;
 
     msgCtx->textIsCredits = msgCtx->messageHasSetSfx = false;

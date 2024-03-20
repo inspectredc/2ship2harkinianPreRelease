@@ -166,7 +166,11 @@ void EnMag_Init(Actor* thisx, PlayState* play) {
         gSaveContext.transWipeSpeed = 255;
     }
 
-    Font_LoadOrderedFont(&this->font);
+    if (ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
+        Font_LoadOrderedFont_JP(&this->font);
+    } else {
+        Font_LoadOrderedFont(&this->font);
+    }
 
     this->unk11F58 = 0;
     this->unk11F5A = 0;

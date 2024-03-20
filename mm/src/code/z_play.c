@@ -39,6 +39,10 @@ u8 sMotionBlurStatus;
 #include <string.h>
 #include <GameVersions.h>
 
+// #region 2S2H [JP]
+MessageTableEntry* sJPMessageEntryTablePtr = NULL;
+// #endregion
+
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
 

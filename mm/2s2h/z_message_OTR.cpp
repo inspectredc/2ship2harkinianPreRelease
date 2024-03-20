@@ -7,6 +7,7 @@
 #include "2s2h/resource/type/TextMM.h"
 #include <message_data_static.h>
 #include <resource/type/Text.h>
+#include <GameVersions.h>
 
 //extern "C" MessageTableEntry* sNesMessageEntryTablePtr;
 //extern "C" MessageTableEntry* sStaffMessageEntryTablePtr;
@@ -55,7 +56,9 @@ MessageTableEntry* OTRMessage_LoadTable(const char* filePath, bool isNES) {
 }
 
 extern "C" void OTRJPFontMessage_Init() {
-    sJPMessageEntryTablePtr = OTRMessage_LoadTable("text/message_data_static_jp/message_data_static_jp", false);
+    if (sJPMessageEntryTablePtr == NULL) {
+        sJPMessageEntryTablePtr = OTRMessage_LoadTable("text/message_data_static_jp/message_data_static_jp", false);
+    }
 }
 
 extern "C" void OTRMessage_Init(PlayState* play) {
@@ -64,6 +67,9 @@ extern "C" void OTRMessage_Init(PlayState* play) {
     // Once we fix the implementation, remove these NULL checks.
     //if (play->msgCtx.messageEntryTableNes == NULL) {
         play->msgCtx.messageEntryTableNes = OTRMessage_LoadTable("text/message_data_static/message_data_static", true);
+        if (LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions()[0] == MM_NTSC_JP_GC) {
+            OTRJPFontMessage_Init();
+        }
         play->msgCtx.messageEntryTable = play->msgCtx.messageEntryTableNes;
     //}
 
