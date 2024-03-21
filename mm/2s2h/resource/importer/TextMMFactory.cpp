@@ -60,7 +60,7 @@ void LUS::TextMMFactoryV0::ParseFileBinary(std::shared_ptr<BinaryReader> reader,
         entry.id = reader->ReadUInt16();
         entry.textboxType = reader->ReadUByte();
         entry.textboxYPos = reader->ReadUByte();
-        entry.icon = reader->ReadUByte();
+        entry.icon = reader->ReadUInt16();
         entry.nextMessageID = reader->ReadUInt16();
         entry.firstItemCost = reader->ReadUInt16();
         entry.secondItemCost = reader->ReadUInt16();

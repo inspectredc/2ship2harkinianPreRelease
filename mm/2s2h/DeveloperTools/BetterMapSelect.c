@@ -18,7 +18,7 @@ void BetterMapSelect_LoadGame(MapSelectState* mapSelectState, u32 entrance, s32 
 
 void BetterMapSelect_LoadFileSelect(MapSelectState* mapSelectState) {
     STOP_GAMESTATE(&mapSelectState->state);
-    if (ResourceMgr_GetGameVersion(0) == MM_NTSC_JP_GC) {
+    if (ResourceMgr_GetGameDefaultLanguage(0) == LANGUAGE_JPN) {
         SET_NEXT_GAMESTATE(&mapSelectState->state, FileSelect_JP_Init, sizeof(FileSelectState));
     } else {
         SET_NEXT_GAMESTATE(&mapSelectState->state, FileSelect_Init, sizeof(FileSelectState));
