@@ -109,10 +109,7 @@ void from_json(const json& j, SavePlayerData& savePlayerData) {
         savePlayerData.newf[i] = newf[i];
     }
     j.at("threeDayResetCount").get_to(savePlayerData.threeDayResetCount);
-    std::string playerName = j.at("playerName").get<std::string>();
-    for (int i = 0; i < 8; i++) {
-        savePlayerData.playerName[i] = playerName[i];
-    }
+    j.at("playerName").get_to(savePlayerData.playerName);
     j.at("healthCapacity").get_to(savePlayerData.healthCapacity);
     j.at("health").get_to(savePlayerData.health);
     j.at("magicLevel").get_to(savePlayerData.magicLevel);
