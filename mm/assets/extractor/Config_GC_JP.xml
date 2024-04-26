@@ -3,6 +3,10 @@
     <ActorList File="symbols/ActorList_MM.txt"/>
     <ObjectList File="symbols/ObjectList_MM.txt"/>
     <EnumData File="EnumData.xml"/>
+<<<<<<<< HEAD:mm/assets/extractor/Config_GC_JP.xml
     <ExternalXMLFolder Path="assets/extractor/xmls/GC_JP/"/>
+========
+    <ExternalXMLFolder Path="assets/extractor/xmls/GC_US/"/>
+>>>>>>>> upstream/develop:mm/assets/extractor/Config_GC_US.xml
     <ExternalFile XmlPath="objects/gameplay_keep.xml" OutPath="objects/gameplay_keep/"/>
 </Root>

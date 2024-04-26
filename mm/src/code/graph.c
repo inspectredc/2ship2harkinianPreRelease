@@ -3,8 +3,7 @@
 #include "regs.h"
 #include "functions.h"
 #include "fault.h"
-#include "gfxdebuggerbridge.h"
-#include "libultraship/libultraship.h"
+#include <libultraship/bridge.h>
 #include <string.h>
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
@@ -181,7 +180,7 @@ retry:
     task->ucode_boot = SysUcode_GetUCodeBoot();
     task->ucode_boot_size = SysUcode_GetUCodeBootSize();
     task->ucode = SysUcode_GetUCode();
-    task->ucode_data = SysUcode_GetUCodeData();
+    //task->ucode_data = SysUcode_GetUCodeData();
     task->ucode_size = SP_UCODE_SIZE;
     task->ucode_data_size = SP_UCODE_DATA_SIZE;
     task->dram_stack = (u64*)gGfxSPTaskStack;
@@ -243,9 +242,9 @@ void Graph_UpdateGame(GameState* gameState) {
     GameState_GetInput(gameState);
     GameState_IncrementFrameCount(gameState);
     // BENTODO
-    // if (SREG(20) < 3) {
-    //    Audio_Update();
-    //}
+    if (SREG(20) < 3) {
+        Audio_Update();
+    }
 }
 
 /**
@@ -278,10 +277,10 @@ void Graph_ExecuteAndDraw(GraphicsContext* gfxCtx, GameState* gameState) {
         Gfx* gfx = gGfxMasterDL->taskStart;
 
         gSPSegment(gfx++, 0x0E, gGfxMasterDL);
-        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[3])); // Work buffer
-        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[0])); // OPA buffer
-        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[1])); // XLU buffer
-        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[2])); // Overlay buffer
+        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[3]));     // Work buffer
+        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[0]));     // OPA buffer
+        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[1]));     // XLU buffer
+        gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(disps[2]));     // Overlay buffer
         gSPDisplayList(gfx++, D_0E000000_TO_SEGMENTED(debugDisp[0])); // Debug buffer
 
         gDPPipeSync(gfx++);

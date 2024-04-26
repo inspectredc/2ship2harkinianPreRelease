@@ -15,8 +15,9 @@
 #include "interface/week_static/week_static.h"
 #include "BenPort.h"
 #include <string.h>
-#include "libultraship/libultraship.h"
 #include "BenGui/HudEditor.h"
+#include "2s2h_assets.h"
+#include "Enhancements/GameInteractor/GameInteractor.h"
 
 // #region 2S2H [Port] Asset tables we can pull from instead of from ROM
 #define dgEmptyTexture "__OTR__textures/virtual/gEmptyTexture"
@@ -2192,9 +2193,13 @@ void Interface_UpdateButtonsPart2(PlayState* play) {
                     }
                 } else if (GET_CUR_FORM_BTN_ITEM(i) == ITEM_MASK_FIERCE_DEITY) {
                     // Fierce Deity's Mask is equipped
-                    if ((play->sceneId != SCENE_MITURIN_BS) && (play->sceneId != SCENE_HAKUGIN_BS) &&
-                        (play->sceneId != SCENE_SEA_BS) && (play->sceneId != SCENE_INISIE_BS) &&
-                        (play->sceneId != SCENE_LAST_BS)) {
+                    u8 vanillaSceneConditionResult = 
+                        (play->sceneId != SCENE_MITURIN_BS) && 
+                        (play->sceneId != SCENE_HAKUGIN_BS) &&
+                        (play->sceneId != SCENE_SEA_BS) &&
+                        (play->sceneId != SCENE_INISIE_BS) &&
+                        (play->sceneId != SCENE_LAST_BS);
+                    if (GameInteractor_Should(GI_VB_DISABLE_FD_MASK, vanillaSceneConditionResult, NULL)) {
                         if (gSaveContext.buttonStatus[i] != BTN_DISABLED) {
                             gSaveContext.buttonStatus[i] = BTN_DISABLED;
                             restoreHudVisibility = true;
@@ -2481,7 +2486,7 @@ void Interface_UpdateButtonsPart1(PlayState* play) {
                     if (!CHECK_EVENTINF(EVENTINF_41) ||
                         (CHECK_EVENTINF(EVENTINF_41) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE))) {
                         Audio_PlaySfx(NA_SE_SY_CAMERA_SHUTTER);
-                        SREG(89) = 1;
+                        R_PICTO_PHOTO_STATE = PICTO_PHOTO_STATE_SETUP;
                         play->haltAllActors = true;
                         sPictoState = PICTO_BOX_STATE_SETUP_PHOTO;
                         sPictoPhotoBeingTaken = true;
@@ -4040,9 +4045,35 @@ void Magic_DrawMeter(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 250, 250, 0, interfaceCtx->magicAlpha);
             gDPLoadTextureBlock_4b(OVERLAY_DISP++, gMagicMeterFillTex, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_WRAP,
                                    G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-            gSPTextureRectangle(OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
-                                (((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2,
-                                (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
+            // #region 2S2H [Cosmetic] Hud Editor
+            HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_MAGIC_METER);
+            if (HudEditor_ShouldOverrideDraw()) {
+                if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                } else {
+                    // All of this information was derived from the original call to gSPTextureRectangle below
+                    s16 rectLeft = 104 >> 2;
+                    s16 rectTop = magicBarY + 3;
+                    s16 rectWidth = gSaveContext.save.saveInfo.playerData.magic;
+                    s16 rectHeight = 7;
+                    s16 dsdx = 512;
+                    s16 dtdy = 512;
+
+                    HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                    gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2,
+                                    (rectLeft + rectWidth) << 2, (rectTop + rectHeight) << 2,
+                                    G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                }
+            } else {
+            // #endregion
+                gSPTextureRectangle(OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
+                                    (((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2,
+                                    (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            }
 
             // Fill the rest of the meter with the normal magic color
             gDPPipeSync(OVERLAY_DISP++);
@@ -4054,11 +4085,36 @@ void Magic_DrawMeter(PlayState* play) {
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 200, 0, interfaceCtx->magicAlpha);
             }
 
-            gSPTextureRectangle(
-                OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
-                ((((void)0, gSaveContext.save.saveInfo.playerData.magic) - ((void)0, gSaveContext.magicToConsume)) + 26)
-                    << 2,
-                (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            // #region 2S2H [Cosmetic] Hud Editor
+            HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_MAGIC_METER);
+            if (HudEditor_ShouldOverrideDraw()) {
+                if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                } else {
+                    // All of this information was derived from the original call to gSPTextureRectangle below
+                    s16 rectLeft = 104 >> 2;
+                    s16 rectTop = magicBarY + 3;
+                    s16 rectWidth = gSaveContext.save.saveInfo.playerData.magic - gSaveContext.magicToConsume;
+                    s16 rectHeight = 7;
+                    s16 dsdx = 512;
+                    s16 dtdy = 512;
+
+                    HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                    gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2,
+                                    (rectLeft + rectWidth) << 2, (rectTop + rectHeight) << 2,
+                                    G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                }
+            } else {
+            // #endregion
+                gSPTextureRectangle(
+                    OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
+                    ((((void)0, gSaveContext.save.saveInfo.playerData.magic) - ((void)0, gSaveContext.magicToConsume)) + 26)
+                        << 2,
+                    (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            }
         } else {
             // Fill the whole meter with the normal magic color
             if (CHECK_WEEKEVENTREG(WEEKEVENTREG_DRANK_CHATEAU_ROMANI)) {
@@ -4290,8 +4346,33 @@ void Interface_DrawItemButtons(PlayState* play) {
             gDPLoadTextureBlock_4b(OVERLAY_DISP++, cUpLabelTextures[gSaveContext.options.language], G_IM_FMT_IA, 32, 12,
                                    0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                    G_TX_NOLOD, G_TX_NOLOD);
-            gSPTextureRectangle(OVERLAY_DISP++, 0x03DC, 0x0048, 0x045C, 0x0078, G_TX_RENDERTILE, 0, 0, 1 << 10,
-                                1 << 10);
+
+            // #region 2S2H [Cosmetic] Hud Editor
+            HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_C_UP);
+            if (HudEditor_ShouldOverrideDraw()) {
+                if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                } else {
+                    // All of this information was derived from the original call to gSPTextureRectangle below
+                    s16 rectLeft = 0x03DC / 4;
+                    s16 rectTop = 0x0048 / 4;
+                    s16 rectWidth = 0x045C / 4;
+                    s16 rectHeight = (0x0078 / 4) - rectTop;
+                    s16 dsdx = 512;
+                    s16 dtdy = 512;
+
+                    HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                    hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                    gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2, (rectLeft + rectWidth) << 2,
+                                            (rectTop + rectHeight) << 2, G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                }
+            } else {
+                // #endregion
+                gSPTextureRectangle(OVERLAY_DISP++, 0x03DC, 0x0048, 0x045C, 0x0078, G_TX_RENDERTILE, 0, 0, 1 << 10,
+                                    1 << 10);
+            }
         }
 
         sCUpTimer--;
@@ -4760,7 +4841,7 @@ void Interface_DrawClock(PlayState* play) {
         CLOCK_TIME(10, 0), CLOCK_TIME(11, 0), CLOCK_TIME(12, 0), CLOCK_TIME(13, 0), CLOCK_TIME(14, 0),
         CLOCK_TIME(15, 0), CLOCK_TIME(16, 0), CLOCK_TIME(17, 0), CLOCK_TIME(18, 0), CLOCK_TIME(19, 0),
         CLOCK_TIME(20, 0), CLOCK_TIME(21, 0), CLOCK_TIME(22, 0), CLOCK_TIME(23, 0), CLOCK_TIME(24, 0) - 1,
-        CLOCK_TIME(0, 0), // 2S2H [Port] This was removed in the minibuild, not sure why
+        CLOCK_TIME(0, 0),
     };
     static TexturePtr sThreeDayClockHourTextures[] = {
         gThreeDayClockHour12Tex, gThreeDayClockHour1Tex, gThreeDayClockHour2Tex,  gThreeDayClockHour3Tex,
@@ -4769,7 +4850,18 @@ void Interface_DrawClock(PlayState* play) {
         gThreeDayClockHour12Tex, gThreeDayClockHour1Tex, gThreeDayClockHour2Tex,  gThreeDayClockHour3Tex,
         gThreeDayClockHour4Tex,  gThreeDayClockHour5Tex, gThreeDayClockHour6Tex,  gThreeDayClockHour7Tex,
         gThreeDayClockHour8Tex,  gThreeDayClockHour9Tex, gThreeDayClockHour10Tex, gThreeDayClockHour11Tex,
-        gEmptyTexture, // 2S2H [Port] To account for the vanilla bug detailed later on in this function
+        gEmptyTexture, gEmptyTexture, // 2S2H [Port] To account for the vanilla bug detailed later on in this function
+    };
+        // 2S2H Region [Enhancements] 24 Hours Clock
+        static TexturePtr sThreeDayClockHourTwentyHourHoursTextures[] = {
+        gThreeDayClockHour24Tex, gThreeDayClockHour1Tex, gThreeDayClockHour2Tex,  gThreeDayClockHour3Tex,
+        gThreeDayClockHour4Tex,  gThreeDayClockHour5Tex, gThreeDayClockHour6Tex,  gThreeDayClockHour7Tex,
+        gThreeDayClockHour8Tex,  gThreeDayClockHour9Tex, gThreeDayClockHour10Tex, gThreeDayClockHour11Tex,
+        gThreeDayClockHour12Tex, gThreeDayClockHour13Tex, gThreeDayClockHour14Tex,  gThreeDayClockHour15Tex,
+        gThreeDayClockHour16Tex,  gThreeDayClockHour17Tex, gThreeDayClockHour18Tex,  gThreeDayClockHour19Tex,
+        gThreeDayClockHour20Tex,  gThreeDayClockHour21Tex, gThreeDayClockHour22Tex, gThreeDayClockHour23Tex,
+        gEmptyTexture, gEmptyTexture, // 2S2H [Port] To account for the vanilla bug detailed later on in this function
+        // #endregison
     };
     static s16 sClockInvDiamondPrimRed = 0;
     static s16 sClockInvDiamondPrimGreen = 155;
@@ -5049,8 +5141,9 @@ void Interface_DrawClock(PlayState* play) {
              * Section: Cuts off Three-Day Clock's Sun and Moon when they dip below the clock
              */
             gDPPipeSync(OVERLAY_DISP++);
-            gDPSetScissorFrac(OVERLAY_DISP++, G_SC_NON_INTERLACE, 400, 620, 880,
-                              R_THREE_DAY_CLOCK_SUN_MOON_CUTOFF * 4.0f);
+            // 2S2H [Cosmetic] Adjust the x values so the scissor stays the same size regardless of widescreen
+            gDPSetScissor(OVERLAY_DISP++, G_SC_NON_INTERLACE, OTRConvertHUDXToScreenX(400 / 4), 620 / 4,
+                          OTRConvertHUDXToScreenX(880 / 4), R_THREE_DAY_CLOCK_SUN_MOON_CUTOFF);
 
             // determines the current hour
             for (sp1C6 = 0; sp1C6 <= 24; sp1C6++) {
@@ -5062,7 +5155,7 @@ void Interface_DrawClock(PlayState* play) {
                 // due to the for loop terminating. This results in 25, which is OOB for the
                 // sThreeDayClockHourTextures[] read later. On console, this results in the hour
                 // disappearing for a frame or two between 11 changing to 12.
-                // 2S2H [Port] We are opting to fix this by adding a blank texture to the end of
+                // 2S2H [Port] We are opting to fix this by adding two blank textures to the end of
                 // the sThreeDayClockHourTextures array, instead of letting it read OOB
                 if (((void)0, gSaveContext.save.time) < sThreeDayClockHours[sp1C6 + 1]) {
                     break;
@@ -5109,8 +5202,9 @@ void Interface_DrawClock(PlayState* play) {
              * Section: Cuts off Three-Day Clock's Hour Digits when they dip below the clock
              */
             gDPPipeSync(OVERLAY_DISP++);
-            gDPSetScissorFrac(OVERLAY_DISP++, G_SC_NON_INTERLACE, 400, 620, 880,
-                              R_THREE_DAY_CLOCK_HOUR_DIGIT_CUTOFF * 4.0f);
+            // 2S2H [Cosmetic] Adjust the x values so the scissor stays the same size regardless of widescreen
+            gDPSetScissor(OVERLAY_DISP++, G_SC_NON_INTERLACE, OTRConvertHUDXToScreenX(400 / 4), (620 / 4),
+                          OTRConvertHUDXToScreenX(880 / 4), R_THREE_DAY_CLOCK_SUN_MOON_CUTOFF);
 
             /**
              * Section: Draws Three-Day Clock's Hour Digit Above the Sun
@@ -5130,7 +5224,9 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, sThreeDayClockAlpha);
             gSPVertex(OVERLAY_DISP++, &interfaceCtx->actionVtx[24], 8, 0);
 
-            OVERLAY_DISP = Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTextures[sp1C6], 4, 16, 11, 0);
+            OVERLAY_DISP = CVarGetInteger("gEnhancements.General.24HoursClock", 0) ? 
+              Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTwentyHourHoursTextures[sp1C6], 4, 16, 11, 0) : 
+              Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTextures[sp1C6], 4, 16, 11, 0);
 
             // Colours the Three-Day Clocks's Hour Digit Above the Sun
             gDPPipeSync(OVERLAY_DISP++);
@@ -5154,7 +5250,10 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, sThreeDayClockAlpha);
             gSPVertex(OVERLAY_DISP++, &interfaceCtx->actionVtx[32], 8, 0);
 
-            OVERLAY_DISP = Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTextures[sp1C6], 4, 16, 11, 0);
+            OVERLAY_DISP = CVarGetInteger("gEnhancements.General.24HoursClock", 0) ? 
+              Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTwentyHourHoursTextures[sp1C6], 4, 16, 11, 0) : 
+              Gfx_DrawTexQuad4b(OVERLAY_DISP, sThreeDayClockHourTextures[sp1C6], 4, 16, 11, 0);
+
 
             // Colours the Three-Day Clocks's Hour Digit Above the Moon
             gDPPipeSync(OVERLAY_DISP++);
@@ -6643,13 +6742,13 @@ void Interface_Draw(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, pauseCtx->alpha);
 
             // Load in Grandma's Story
-            gSPLoadUcodeL(OVERLAY_DISP++, gspS2DEX2_fifo);
+            gSPLoadUcodeL(OVERLAY_DISP++, ucode_s2dex);
             gfx = OVERLAY_DISP;
             Prerender_DrawBackground2D(&gfx, sStoryTextures[interfaceCtx->storyType],
                                        sStoryTLUTs[interfaceCtx->storyType], SCREEN_WIDTH, SCREEN_HEIGHT, G_IM_FMT_CI,
                                        G_IM_SIZ_8b, 0x8000, 0x100, 0.0f, 0.0f, 1.0f, 1.0f, 0);
             OVERLAY_DISP = gfx;
-            gSPLoadUcode(OVERLAY_DISP++, SysUcode_GetUCode(), SysUcode_GetUCodeData());
+            gSPLoadUcode(OVERLAY_DISP++, SysUcode_GetUCode());
 
             gDPPipeSync(OVERLAY_DISP++);
 
@@ -6688,6 +6787,8 @@ void Interface_Draw(PlayState* play) {
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 200, 230, 255, interfaceCtx->magicAlpha);
                     gDPSetEnvColor(OVERLAY_DISP++, 0, 0, 20, 255);
+
+                    HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_KEY_COUNTER);
                     OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gSmallKeyCounterIconTex, 16, 16, 26, 190, 16, 16,
                                                       1 << 10, 1 << 10);
 
@@ -6724,13 +6825,40 @@ void Interface_Draw(PlayState* play) {
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, interfaceCtx->magicAlpha);
 
+                    HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_KEY_COUNTER);
                     OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, sCounterTextures[counterDigits[3]], 8, 16, sp2CA + 1,
                                                      191, 8, 16, 1 << 10, 1 << 10);
 
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                    gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0, 0,
-                                        1 << 10, 1 << 10);
+
+                    // #region 2S2H [Cosmetic] Hud Editor
+                    HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_KEY_COUNTER);
+                    if (HudEditor_ShouldOverrideDraw()) {
+                        if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                            hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                        } else {
+                            // All of this information was derived from the original call to gSPTextureRectangle below
+                            s16 rectLeft = sp2CA;
+                            s16 rectTop = 760 / 4;
+                            s16 rectWidth = 0x20 / 4;
+                            s16 rectHeight = (824 / 4) - rectTop;
+                            s16 dsdx = 512;
+                            s16 dtdy = 512;
+
+                            HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                            hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                            gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2,
+                                                    (rectLeft + rectWidth) << 2, (rectTop + rectHeight) << 2,
+                                                    G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                        }
+                        // #endregion
+                    } else {
+                        gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0,
+                                            0, 1 << 10, 1 << 10);
+                    }
                 }
                 break;
 
@@ -6741,10 +6869,37 @@ void Interface_Draw(PlayState* play) {
                 gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
                 gDPSetEnvColor(OVERLAY_DISP++, 0, 0, 0, 255);
+
                 gDPLoadTextureBlock(OVERLAY_DISP++, gGoldSkulltulaCounterIconTex, G_IM_FMT_RGBA, G_IM_SIZ_32b, 24, 24, // 2S2H [Port] This last 24 was 18 in the minibuild, not sure why
                                     0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                     G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(OVERLAY_DISP++, 80, 748, 176, 820, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+                
+                // #region 2S2H [Cosmetic] Hud Editor
+                HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_SKULLTULA_COUNTER);
+                if (HudEditor_ShouldOverrideDraw()) {
+                    if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                        hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                    } else {
+                        // All of this information was derived from the original call to gSPTextureRectangle below
+                        s16 rectLeft = 80 / 4;
+                        s16 rectTop = 748 / 4;
+                        s16 rectWidth = 176 / 4;
+                        s16 rectHeight = (820 / 4) - rectTop;
+                        s16 dsdx = 512;
+                        s16 dtdy = 512;
+
+                        HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                        hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                        gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2,
+                                                (rectLeft + rectWidth) << 2, (rectTop + rectHeight) << 2,
+                                                G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                    }
+                } else {
+                    // #endregion
+                    gSPTextureRectangle(OVERLAY_DISP++, 80, 748, 176, 820, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+                }
 
                 // Gold Skulluta Counter
                 gDPPipeSync(OVERLAY_DISP++);
@@ -6778,13 +6933,40 @@ void Interface_Draw(PlayState* play) {
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, interfaceCtx->magicAlpha);
 
+                HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_SKULLTULA_COUNTER);
                 OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, sCounterTextures[counterDigits[3]], 8, 16, sp2CA + 1, 191,
                                                  8, 16, 1 << 10, 1 << 10);
 
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0, 0,
-                                    1 << 10, 1 << 10);
+
+                // #region 2S2H [Cosmetic] Hud Editor
+                    HudEditor_SetActiveElement(HUD_EDITOR_ELEMENT_SKULLTULA_COUNTER);
+                    if (HudEditor_ShouldOverrideDraw()) {
+                        if (CVarGetInteger(hudEditorElements[hudEditorActiveElement].modeCvar, HUD_EDITOR_ELEMENT_MODE_VANILLA) == HUD_EDITOR_ELEMENT_MODE_HIDDEN) {
+                            hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+                        } else {
+                            // All of this information was derived from the original call to gSPTextureRectangle below
+                            s16 rectLeft = sp2CA;
+                            s16 rectTop = 760 / 4;
+                            s16 rectWidth = 0x20 / 4;
+                            s16 rectHeight = (824 / 4) - rectTop;
+                            s16 dsdx = 512;
+                            s16 dtdy = 512;
+
+                            HudEditor_ModifyDrawValues(&rectLeft, &rectTop, &rectWidth, &rectHeight, &dsdx, &dtdy);
+
+                            hudEditorActiveElement = HUD_EDITOR_ELEMENT_NONE;
+
+                            gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2,
+                                                    (rectLeft + rectWidth) << 2, (rectTop + rectHeight) << 2,
+                                                    G_TX_RENDERTILE, 0, 0, dsdx << 1, dtdy << 1);
+                        }
+                        // #endregion
+                    } else {
+                        gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0,
+                                            0, 1 << 10, 1 << 10);
+                    }
                 break;
 
             default:
@@ -7019,6 +7201,10 @@ void Interface_Draw(PlayState* play) {
             pictoRectTop = PICTO_PHOTO_TOPLEFT_Y - 33;
             for (sp2CC = 0; sp2CC < (PICTO_PHOTO_HEIGHT / 8); sp2CC++, pictoRectTop += 8) {
                 pictoRectLeft = PICTO_PHOTO_TOPLEFT_X;
+                // 2S2H [Port] Invalidate each section. This could probably be optimized to only be done once each pic
+                gSPInvalidateTexCache(OVERLAY_DISP++,
+                                      (u8*)((play->pictoPhotoI8 != NULL) ? play->pictoPhotoI8 : gWorkBuffer) +
+                                          (0x500 * sp2CC));
                 gDPLoadTextureBlock(OVERLAY_DISP++,
                                     (u8*)((play->pictoPhotoI8 != NULL) ? play->pictoPhotoI8 : gWorkBuffer) +
                                         (0x500 * sp2CC),

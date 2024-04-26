@@ -13,7 +13,7 @@
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "debug.h"
 
-#include "Enhancements/GameInteractor/GameInteractorHooks.h"
+#include "Enhancements/GameInteractor/GameInteractor.h"
 
 s32 gFramerateDivisor = 1;
 f32 gFramerateDivisorF = 1.0f;
@@ -240,8 +240,8 @@ void GameState_Init(GameState* gameState, GameStateFunc init, GraphicsContext* g
 
 void GameState_Destroy(GameState* gameState) {
     // BENTODO
-    //AudioMgr_StopAllSfxExceptSystem();
-    //Audio_Update();
+    AudioMgr_StopAllSfxExceptSystem();
+    Audio_Update();
     osRecvMesg(&gameState->gfxCtx->queue, NULL, OS_MESG_BLOCK);
 
     if (gameState->destroy != NULL) {

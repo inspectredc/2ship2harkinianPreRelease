@@ -5,6 +5,7 @@
  */
 
 #include "z_oceff_wipe5.h"
+#include "assets/overlays/ovl_Oceff_Wipe5/ovl_Oceff_Wipe5.h"
 #include "BenPort.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_2000000)
@@ -29,20 +30,20 @@ ActorInit Oceff_Wipe5_InitVars = {
 };
 
 UNK_TYPE4 D_80BC9260;
+static Vtx* gOceff5VtxData;
 
 void OceffWipe5_Init(Actor* thisx, PlayState* play) {
     OceffWipe5* this = THIS;
+
+    gOceff5VtxData = ResourceMgr_LoadVtxByName(gOceff5Vtx);
 
     Actor_SetScale(&this->actor, 1.0f);
     this->counter = 0;
     this->actor.world.pos = play->cameraPtrs[play->activeCamId]->eye;
 }
 
-static Vtx* gOceff5VtxData;
-
 void OceffWipe5_Destroy(Actor* thisx, PlayState* play) {
     OceffWipe5* this = THIS;
-    gOceff5VtxData = ResourceMgr_LoadArrayByName(gOceff5VtxData);
 
     Magic_Reset(play);
     play->msgCtx.ocarinaSongEffectActive = false;
@@ -59,7 +60,6 @@ void OceffWipe5_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-#include "assets/overlays/ovl_Oceff_Wipe5/ovl_Oceff_Wipe5.h"
 
 static u8 sPrimColors[] = {
     255, 255, 200, 255, 255, 200, 200, 255, 255, 255, 255, 200, 255, 200, 255,
@@ -82,10 +82,25 @@ void OceffWipe5_Draw(Actor* thisx, PlayState* play) {
     s32 colorIndex = OCEFF_WIPE5_GET_SONG_TYPE(thisx) * 3;
     f32 phi_fv1 = 1220.0f;
 
+    // #region 2S2H [Widescreen] Ocarina Effects
+    s32 x = OTRGetRectDimensionFromLeftEdge(0) << 2;
+    if (x < 0) {
+        // Only render if the screen is wider then original
+        phi_fv1 = 1220.0f / (OTRGetAspectRatio() * 0.85f); // Widescreen value
+    }
+    // #endregion
+
     if ((((OCEFF_WIPE5_GET_SONG_TYPE(thisx) == 2) && (play->sceneId == SCENE_LABO)) &&
          ((play->csCtx.scriptIndex == 0) || (play->csCtx.scriptIndex == 1))) &&
         (play->csCtx.state != CS_STATE_IDLE)) {
-        phi_fv1 = 1150.0f;
+        // #region 2S2H [Widescreen] Ocarina Effects
+        if (x < 0) {
+            // Only render if the screen is wider then original
+            phi_fv1 = 1150.0f / (OTRGetAspectRatio() * 0.85f); // Widescreen value
+        } else {
+            phi_fv1 = 1150.0f; // Vanilla value
+        }
+        // #endregion
     }
 
     if (colorIndex >= 13) {
@@ -106,7 +121,7 @@ void OceffWipe5_Draw(Actor* thisx, PlayState* play) {
         alpha = 255;
     }
 
-    for (i = 1; i < ResourceMgr_GetArraySizeByName(gOceff5Vtx); i += 2) {
+    for (i = 1; i < ResourceMgr_GetVtxArraySizeByName(gOceff5Vtx); i += 2) {
         gOceff5VtxData[i].v.cn[3] = alpha;
     }
 

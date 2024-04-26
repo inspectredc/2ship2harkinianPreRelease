@@ -6,7 +6,6 @@
 #include "interface/parameter_static/parameter_static.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "BenPort.h"
-#include <libultraship/libultraship.h>
 #include "assets/archives/schedule_dma_static/schedule_dma_static_yar.h"
 #include "assets/archives/icon_item_static/icon_item_static_yar.h"
 #include "assets/archives/icon_item_24_static/icon_item_24_static_yar.h"
@@ -57,8 +56,8 @@ const char* gQuestIcons[] = {
     gQuestIconCompassTex,
     gQuestIconDungeonMapTex,
     gQuestIconGoldSkulltula2Tex,
-    gQuestIconSmallMagicJarTex,
     gQuestIconSmallKeyTex,
+    gQuestIconSmallMagicJarTex,
     gQuestIconBigMagicJarTex,
     gQuestIconLinkHumanFaceTex,
 };
@@ -321,6 +320,8 @@ s32 Message_ShouldAdvance(PlayState* play) {
             Audio_PlaySfx(NA_SE_SY_MESSAGE_PASS);
         }
         return CHECK_BTN_ALL(controller->press.button, BTN_A) || CHECK_BTN_ALL(controller->press.button, BTN_B) ||
+               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
+               (CVarGetInteger("gEnhancements.TimeSavers.FastText", 0) && CHECK_BTN_ALL(controller->cur.button, BTN_B)) ||
                CHECK_BTN_ALL(controller->press.button, BTN_CUP);
     }
 }
@@ -333,6 +334,8 @@ s32 Message_ShouldAdvanceSilent(PlayState* play) {
         return CHECK_BTN_ALL(controller->press.button, BTN_A);
     } else {
         return CHECK_BTN_ALL(controller->press.button, BTN_A) || CHECK_BTN_ALL(controller->press.button, BTN_B) ||
+               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
+               (CVarGetInteger("gEnhancements.TimeSavers.FastText", 0) && CHECK_BTN_ALL(controller->cur.button, BTN_B)) ||
                CHECK_BTN_ALL(controller->press.button, BTN_CUP);
     }
 }
@@ -2360,7 +2363,7 @@ void Message_SetupLoadItemIcon(PlayState* play) {
                 msgCtx->itemId = (u8)font->msgBuf.schar[msgCtx->msgBufPos];
             }
             msgCtx->nextTextId = font->msgBuf.schar[++msgCtx->msgBufPos] << 8;
-            msgCtx->nextTextId |= font->msgBuf.schar[++msgCtx->msgBufPos];
+            msgCtx->nextTextId += font->msgBuf.schar[++msgCtx->msgBufPos];
 
             msgCtx->unk1206C = (u8)(font->msgBuf.schar[++msgCtx->msgBufPos] << 8);
             msgCtx->unk1206C |= font->msgBuf.schar[++msgCtx->msgBufPos];
@@ -5887,7 +5890,11 @@ void Message_Update(PlayState* play) {
 
         case MSGMODE_TEXT_DISPLAYING:
             if (msgCtx->textBoxType != TEXTBOX_TYPE_4) {
-                if (CHECK_BTN_ALL(input->press.button, BTN_B) && !msgCtx->textUnskippable) {
+                if ((
+                    CHECK_BTN_ALL(input->press.button, BTN_B) ||
+                    // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
+                    (CVarGetInteger("gEnhancements.TimeSavers.FastText", 0) && CHECK_BTN_ALL(input->cur.button, BTN_B))
+                ) && !msgCtx->textUnskippable) {
                     msgCtx->textboxSkipped = true;
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 } else if (CHECK_BTN_ALL(input->press.button, BTN_A) && !msgCtx->textUnskippable) {

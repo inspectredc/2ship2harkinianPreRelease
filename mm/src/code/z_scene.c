@@ -1,5 +1,4 @@
 #include "global.h"
-#include <libultraship/bridge.h>
 
 /**
  * Spawn an object file of a specified ID that will persist through room changes.
@@ -63,7 +62,7 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     // clang-format on
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
-    objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
+    objectCtx->spaceEnd = (void*)((uintptr_t)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
 
     gSegments[4] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);

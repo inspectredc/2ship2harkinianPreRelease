@@ -1,4 +1,4 @@
-﻿#include "BenPort.h"
+#include "BenPort.h"
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
@@ -57,8 +57,11 @@ CrowdControl* CrowdControl::Instance;
 #include "Enhancements/GameInteractor/GameInteractor.h"
 #include "Enhancements/Enhancements.h"
 #include "2s2h/Enhancements/GfxPatcher/AuthenticGfxPatches.h"
+#include "2s2h/DeveloperTools/DebugConsole.h"
+#include "2s2h/DeveloperTools/DeveloperTools.h"
 
 // Resource Types/Factories
+#include "2s2h/resource//type/2shResourceType.h"
 #include "2s2h/resource/type/Animation.h"
 #include "2s2h/resource/type/AudioSample.h"
 #include "2s2h/resource/type/AudioSequence.h"
@@ -70,7 +73,6 @@ CrowdControl* CrowdControl::Instance;
 #include "2s2h/resource/type/Scene.h"
 #include "2s2h/resource/type/Skeleton.h"
 #include "2s2h/resource/type/SkeletonLimb.h"
-#include "2s2h/resource/type/Text.h"
 #include "2s2h/resource/importer/AnimationFactory.h"
 #include "2s2h/resource/importer/AudioSampleFactory.h"
 #include "2s2h/resource/importer/AudioSequenceFactory.h"
@@ -82,7 +84,6 @@ CrowdControl* CrowdControl::Instance;
 #include "2s2h/resource/importer/SceneFactory.h"
 #include "2s2h/resource/importer/SkeletonFactory.h"
 #include "2s2h/resource/importer/SkeletonLimbFactory.h"
-#include "2s2h/resource/importer/TextFactory.h"
 #include "2s2h/resource/importer/TextMMFactory.h"
 #include "2s2h/resource/importer/BackgroundFactory.h"
 #include "2s2h/resource/importer/TextureAnimationFactory.h"
@@ -130,42 +131,44 @@ OTRGlobals::OTRGlobals() {
     // tell LUS to reserve 3 SoH specific threads (Game, Audio, Save)
     context = LUS::Context::CreateInstance("2 Ship 2 Harkinian", appShortName, "shipofharkinian.json", OTRFiles, {}, 3);
     //context = LUS::Context::CreateUninitializedInstance("Ship of Harkinian", appShortName, "shipofharkinian.json");
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_Animation, "Animation", std::make_shared<LUS::AnimationFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_PlayerAnimation, "PlayerAnimation", std::make_shared<LUS::PlayerAnimationFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_Room, "Room", std::make_shared<LUS::SceneFactory>()); // Is room scene? maybe?
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_CollisionHeader, "CollisionHeader", std::make_shared<LUS::CollisionHeaderFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_Skeleton, "Skeleton", std::make_shared<LUS::SkeletonFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_SkeletonLimb, "SkeletonLimb", std::make_shared<LUS::SkeletonLimbFactory>());
-    // TODO should we use a custom command for this?
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(LUS::ResourceType::SOH_Path, "Path",
-                                                                                std::make_shared<LUS::PathFactoryMM>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_Cutscene, "Cutscene", std::make_shared<LUS::CutsceneFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(LUS::ResourceType::SOH_Text, "Text",
-                                                                                std::make_shared<LUS::TextFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(LUS::ResourceType::SOH_TextMM, "TextMM",
-                                                                                std::make_shared<LUS::TextMMFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_AudioSample, "AudioSample", std::make_shared<LUS::AudioSampleFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_AudioSoundFont, "AudioSoundFont", std::make_shared<LUS::AudioSoundFontFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_AudioSequence, "AudioSequence", std::make_shared<LUS::AudioSequenceFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::SOH_Background, "Background", std::make_shared<LUS::BackgroundFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::TSH_TexAnim, "TextureAnimation", std::make_shared<LUS::TextureAnimationFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::TSH_CKeyFrameAnim, "KeyFrameAnim", std::make_shared<LUS::KeyFrameAnimFactory>());
-    context->GetResourceManager()->GetResourceLoader()->RegisterResourceFactory(
-        LUS::ResourceType::TSH_CKeyFrameSkel, "KeyFrameSkel", std::make_shared<LUS::KeyFrameSkelFactory>());
-
+    auto loader = context->GetResourceManager()->GetResourceLoader();
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAnimationV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Animation", static_cast<uint32_t>(SOH::ResourceType::SOH_Animation), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryPlayerAnimationV0>(),
+                                    RESOURCE_FORMAT_BINARY, "PlayerAnimation",
+                                    static_cast<uint32_t>(SOH::ResourceType::SOH_PlayerAnimation), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinarySceneV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Room", static_cast<uint32_t>(SOH::ResourceType::SOH_Room), 0);
+    loader
+        ->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryCollisionHeaderV0>(), RESOURCE_FORMAT_BINARY,
+                                  "CollisionHeader", static_cast<uint32_t>(SOH::ResourceType::SOH_CollisionHeader), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinarySkeletonV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Skeleton", static_cast<uint32_t>(SOH::ResourceType::SOH_Skeleton), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinarySkeletonLimbV0>(),
+                                    RESOURCE_FORMAT_BINARY, "SkeletonLimb",
+                                    static_cast<uint32_t>(SOH::ResourceType::SOH_SkeletonLimb), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryPathMMV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Path", static_cast<uint32_t>(SOH::ResourceType::SOH_Path), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryCutsceneV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Cutscene", static_cast<uint32_t>(SOH::ResourceType::SOH_Cutscene), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryTextMMV0>(), RESOURCE_FORMAT_BINARY,
+                                    "TextMM", static_cast<uint32_t>(SOH::ResourceType::TSH_TextMM), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSampleV2>(), RESOURCE_FORMAT_BINARY,
+                                    "AudioSample", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSample), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSoundFontV2>(),
+                                    RESOURCE_FORMAT_BINARY, "AudioSoundFont",
+                                    static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSoundFont), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSequenceV2>(),
+                                    RESOURCE_FORMAT_BINARY, "AudioSequence", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSequence), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryBackgroundV0>(), RESOURCE_FORMAT_BINARY,
+                                    "Background", static_cast<uint32_t>(SOH::ResourceType::SOH_Background), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryTextureAnimationV0>(),
+                                    RESOURCE_FORMAT_BINARY, "TextureAnimation",
+                                    static_cast<uint32_t>(SOH::ResourceType::TSH_TexAnim), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryKeyFrameAnim>(), RESOURCE_FORMAT_BINARY,
+                                    "KeyFrameAnim", static_cast<uint32_t>(SOH::ResourceType::TSH_CKeyFrameAnim), 0);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryKeyFrameSkel>(), RESOURCE_FORMAT_BINARY,
+                                    "KeyFrameSkel", static_cast<uint32_t>(SOH::ResourceType::TSH_CKeyFrameSkel), 0);
     context->GetControlDeck()->SetSinglePlayerMappingMode(true);
 
     //gSaveStateMgr = std::make_shared<SaveStateMgr>();
@@ -183,7 +186,7 @@ OTRGlobals::OTRGlobals() {
     //    cameraStrings[i] = dup;
     //}
 
-    auto versions = context->GetResourceManager()->GetArchive()->GetGameVersions();
+    auto versions = context->GetResourceManager()->GetArchiveManager()->GetGameVersions();
     #if 0
     for (uint32_t version : versions) {
         if (!ValidHashes.contains(version)) {
@@ -265,8 +268,86 @@ extern "C" int AudioPlayer_GetDesiredBuffered(void);
 extern "C" void ResourceMgr_LoadDirectory(const char* resName);
 std::unordered_map<std::string, ExtensionEntry> ExtensionCache;
 
+static struct {
+    std::thread thread;
+    std::condition_variable cv_to_thread, cv_from_thread;
+    std::mutex mutex;
+    bool running;
+    bool processing;
+} audio;
+
+
+void OTRAudio_Thread() {
+    while (audio.running) {
+        {
+            std::unique_lock<std::mutex> Lock(audio.mutex);
+            while (!audio.processing && audio.running) {
+                audio.cv_to_thread.wait(Lock);
+            }
+
+            if (!audio.running) {
+                break;
+            }
+        }
+        std::unique_lock<std::mutex> Lock(audio.mutex);
+        //AudioMgr_ThreadEntry(&gAudioMgr);
+        // 528 and 544 relate to 60 fps at 32 kHz 32000/60 = 533.333..
+        // in an ideal world, one third of the calls should use num_samples=544 and two thirds num_samples=528
+        //#define SAMPLES_HIGH 560
+        //#define SAMPLES_LOW 528
+        // PAL values
+        //#define SAMPLES_HIGH 656
+        //#define SAMPLES_LOW 624
+
+        // 44KHZ values
+        #define SAMPLES_HIGH 752
+        #define SAMPLES_LOW 720
+
+        #define AUDIO_FRAMES_PER_UPDATE (R_UPDATE_RATE > 0 ? R_UPDATE_RATE : 1 )
+        #define NUM_AUDIO_CHANNELS 2
+
+        int samples_left = AudioPlayer_Buffered();
+        u32 num_audio_samples = samples_left < AudioPlayer_GetDesiredBuffered() ? SAMPLES_HIGH : SAMPLES_LOW;
+
+        // 3 is the maximum authentic frame divisor.
+        s16 audio_buffer[SAMPLES_HIGH * NUM_AUDIO_CHANNELS * 3];
+        for (int i = 0; i < AUDIO_FRAMES_PER_UPDATE; i++) {
+            AudioMgr_CreateNextAudioBuffer(audio_buffer + i * (num_audio_samples * NUM_AUDIO_CHANNELS), num_audio_samples);
+        }
+
+        AudioPlayer_Play((u8*)audio_buffer, num_audio_samples * (sizeof(int16_t) * NUM_AUDIO_CHANNELS * AUDIO_FRAMES_PER_UPDATE));
+
+        audio.processing = false;
+        audio.cv_from_thread.notify_one();
+    }
+}
+
+// C->C++ Bridge
+extern "C" void OTRAudio_Init()
+{
+    // Precache all our samples, sequences, etc...
+    ResourceMgr_LoadDirectory("audio");
+
+    if (!audio.running) {
+        audio.running = true;
+        audio.thread = std::thread(OTRAudio_Thread);
+    }
+}
+
+extern "C" void OTRAudio_Exit() {
+    // Tell the audio thread to stop
+    {
+        std::unique_lock<std::mutex> Lock(audio.mutex);
+        audio.running = false;
+    }
+    audio.cv_to_thread.notify_all();
+
+    // Wait until the audio thread quit
+    audio.thread.join();
+}
+
 extern "C" void OTRExtScanner() {
-    auto lst = *LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->ListFiles("*").get();
+    auto lst = *LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->ListFiles("*").get();
 
     for (auto& rPath : lst) {
         std::vector<std::string> raw = StringHelper::Split(rPath, ".");
@@ -314,10 +395,13 @@ extern "C" void InitOTR() {
     GameInteractor::Instance = new GameInteractor();
     BenGui::SetupGuiElements();
     InitEnhancements();
+    InitDeveloperTools();
     GfxPatcher_ApplyNecessaryAuthenticPatches();
+    DebugConsole_Init();
 
     clearMtx = (uintptr_t)&gMtxClear;
     //OTRMessage_Init();
+    OTRAudio_Init();
     //OTRExtScanner();
     time_t now = time(NULL);
     tm* tm_now = localtime(&now);
@@ -348,6 +432,7 @@ extern "C" void SaveManager_ThreadPoolWait() {
 
 extern "C" void DeinitOTR() {
     SaveManager_ThreadPoolWait();
+    OTRAudio_Exit();
 #ifdef ENABLE_CROWD_CONTROL
     CrowdControl::Instance->Disable();
     CrowdControl::Instance->Shutdown();
@@ -355,7 +440,7 @@ extern "C" void DeinitOTR() {
 
     // Destroying gui here because we have shared ptrs to LUS objects which output to SPDLOG which is destroyed before
     // these shared ptrs.
-    //BenGui::Destroy();
+    BenGui::Destroy();
 
     OTRGlobals::Instance->context = nullptr;
 }
@@ -506,57 +591,12 @@ void RunCommands(Gfx* Commands, const std::vector<std::unordered_map<Mtx*, MtxF>
 
 // C->C++ Bridge
 extern "C" void Graph_ProcessGfxCommands(Gfx* commands) {
-    #if 0
-    if (!audio.initialized) {
-        audio.initialized = true;
-        std::thread([]() {
-            for (;;) {
-                {
-                    std::unique_lock<std::mutex> Lock(audio.mutex);
-                    while (!audio.processing) {
-                        audio.cv_to_thread.wait(Lock);
-                    }
-                }
-                std::unique_lock<std::mutex> Lock(audio.mutex);
-// AudioMgr_ThreadEntry(&gAudioMgr);
-// 528 and 544 relate to 60 fps at 32 kHz 32000/60 = 533.333..
-// in an ideal world, one third of the calls should use num_samples=544 and two thirds num_samples=528
-#define SAMPLES_HIGH 560
-#define SAMPLES_LOW 528
-// PAL values
-//#define SAMPLES_HIGH 656
-//#define SAMPLES_LOW 624
-#define AUDIO_FRAMES_PER_UPDATE (R_UPDATE_RATE > 0 ? R_UPDATE_RATE : 1)
-#define NUM_AUDIO_CHANNELS 2
-                int samples_left = AudioPlayer_Buffered();
-                u32 num_audio_samples = samples_left < AudioPlayer_GetDesiredBuffered() ? SAMPLES_HIGH : SAMPLES_LOW;
-                // printf("Audio samples: %d %u\n", samples_left, num_audio_samples);
-
-                // 3 is the maximum authentic frame divisor.
-                s16 audio_buffer[SAMPLES_HIGH * NUM_AUDIO_CHANNELS * 3];
-                for (int i = 0; i < AUDIO_FRAMES_PER_UPDATE; i++) {
-                    AudioMgr_CreateNextAudioBuffer(audio_buffer + i * (num_audio_samples * NUM_AUDIO_CHANNELS),
-                                                   num_audio_samples);
-                }
-                // for (uint32_t i = 0; i < 2 * num_audio_samples; i++) {
-                //    audio_buffer[i] = Rand_Next() & 0xFF;
-                //}
-                // printf("Audio samples before submitting: %d\n", audio_api->buffered());
-                AudioPlayer_Play((u8*)audio_buffer,
-                                 num_audio_samples * (sizeof(int16_t) * NUM_AUDIO_CHANNELS * AUDIO_FRAMES_PER_UPDATE));
-
-                audio.processing = false;
-                audio.cv_from_thread.notify_one();
-            }
-        }).detach();
-    }
     {
         std::unique_lock<std::mutex> Lock(audio.mutex);
         audio.processing = true;
     }
-    audio.cv_to_thread.notify_one();
-    #endif
 
+    audio.cv_to_thread.notify_one();
     std::vector<std::unordered_map<Mtx*, MtxF>> mtx_replacements;
     int target_fps = CVarGetInteger("gInterpolationFPS", 20);
     static int last_fps;
@@ -604,11 +644,17 @@ extern "C" void Graph_ProcessGfxCommands(Gfx* commands) {
     last_fps = fps;
     last_update_rate = R_UPDATE_RATE;
 
-    //{
-    //    std::unique_lock<std::mutex> Lock(audio.mutex);
-    //    while (audio.processing) {
-    //        audio.cv_from_thread.wait(Lock);
-    //    }
+    {
+       std::unique_lock<std::mutex> Lock(audio.mutex);
+       while (audio.processing) {
+           audio.cv_from_thread.wait(Lock);
+       }
+    }
+    //
+    //if (ShouldClearTextureCacheAtEndOfFrame) {
+    //    gfx_texture_cache_clear();
+    //    LUS::SkeletonPatcher::UpdateSkeletons();
+    //    ShouldClearTextureCacheAtEndOfFrame = false;
     //}
 
     // OTRTODO: FIGURE OUT END FRAME POINT
@@ -632,15 +678,15 @@ extern "C" uint16_t OTRGetPixelDepth(float x, float y) {
 }
 
 extern "C" uint32_t ResourceMgr_GetNumGameVersions() {
-    return LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions().size();
+    return LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions().size();
 }
 
 extern "C" uint32_t ResourceMgr_GetGameVersion(int index) {
-    return LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions()[index];
+    return LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions()[index];
 }
 
 extern "C" uint32_t ResourceMgr_GetGamePlatform(int index) {
-    uint32_t version = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions()[index];
+    uint32_t version = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions()[index];
 
     switch (version) {
         case OOT_NTSC_US_10:
@@ -666,7 +712,7 @@ extern "C" uint32_t ResourceMgr_GetGamePlatform(int index) {
 }
 
 extern "C" uint32_t ResourceMgr_GetGameRegion(int index) {
-    uint32_t version = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->GetGameVersions()[index];
+    uint32_t version = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->GetGameVersions()[index];
 
     switch (version) {
         case OOT_NTSC_US_10:
@@ -774,7 +820,7 @@ extern "C" void ResourceMgr_DirtyDirectory(const char* resName) {
 // OTRTODO: There is probably a more elegant way to go about this...
 // Kenix: This is definitely leaking memory when it's called.
 extern "C" char** ResourceMgr_ListFiles(const char* searchMask, int* resultSize) {
-    auto lst = LUS::Context::GetInstance()->GetResourceManager()->GetArchive()->ListFiles(searchMask);
+    auto lst = LUS::Context::GetInstance()->GetResourceManager()->GetArchiveManager()->ListFiles(searchMask);
     char** result = (char**)malloc(lst->size() * sizeof(char*));
 
     for (size_t i = 0; i < lst->size(); i++) {
@@ -838,7 +884,7 @@ extern "C" char* ResourceMgr_LoadFileFromDisk(const char* filePath) {
 
 extern "C" uint8_t ResourceMgr_ResourceIsBackground(char* texPath) {
     auto res = GetResourceByNameHandlingMQ(texPath);
-    return res->GetInitData()->Type == LUS::ResourceType::SOH_Background;
+    return res->GetInitData()->Type == static_cast<uint32_t>(SOH::ResourceType::SOH_Background);
 }
 
 extern "C" char* ResourceMgr_LoadJPEG(char* data, size_t dataSize) {
@@ -885,9 +931,9 @@ extern "C" uint16_t ResourceMgr_LoadTexHeightByName(char* texPath);
 extern "C" char* ResourceMgr_LoadTexOrDListByName(const char* filePath) {
     auto res = GetResourceByNameHandlingMQ(filePath);
 
-    if (res->GetInitData()->Type == LUS::ResourceType::DisplayList)
+    if (res->GetInitData()->Type == static_cast<uint32_t>(LUS::ResourceType::DisplayList))
         return (char*)&((std::static_pointer_cast<LUS::DisplayList>(res))->Instructions[0]);
-    else if (res->GetInitData()->Type == LUS::ResourceType::Array)
+    else if (res->GetInitData()->Type == static_cast<uint32_t>(LUS::ResourceType::Array))
         return (char*)(std::static_pointer_cast<LUS::Array>(res))->Vertices.data();
     else {
         return (char*)GetResourceDataByNameHandlingMQ(filePath);
@@ -897,7 +943,7 @@ extern "C" char* ResourceMgr_LoadTexOrDListByName(const char* filePath) {
 extern "C" char* ResourceMgr_LoadIfDListByName(const char* filePath) {
     auto res = GetResourceByNameHandlingMQ(filePath);
 
-    if (res->GetInitData()->Type == LUS::ResourceType::DisplayList)
+    if (res->GetInitData()->Type == static_cast<uint32_t>(LUS::ResourceType::DisplayList))
         return (char*)&((std::static_pointer_cast<LUS::DisplayList>(res))->Instructions[0]);
 
     return nullptr;
@@ -908,7 +954,7 @@ extern "C" char* ResourceMgr_LoadIfDListByName(const char* filePath) {
 //}
 
 extern "C" char* ResourceMgr_LoadPlayerAnimByName(const char* animPath) {
-    auto anim = std::static_pointer_cast<LUS::PlayerAnimation>(GetResourceByNameHandlingMQ(animPath));
+    auto anim = std::static_pointer_cast<SOH::PlayerAnimation>(GetResourceByNameHandlingMQ(animPath));
 
     return (char*)&anim->limbRotData[0];
 }
@@ -1058,6 +1104,10 @@ extern "C" Vtx* ResourceMgr_LoadVtxByName(char* path) {
     return (Vtx*)ResourceGetDataByName(path);
 }
 
+extern "C" SequenceData ResourceMgr_LoadSeqByName(const char* path) {
+   SequenceData* sequence = (SequenceData*)ResourceGetDataByName(path);
+   return *sequence;
+}
 extern "C" KeyFrameSkeleton* ResourceMgr_LoadKeyFrameSkelByName(const char* path) {
     return (KeyFrameSkeleton*)ResourceGetDataByName(path);
 }
@@ -1065,13 +1115,6 @@ extern "C" KeyFrameSkeleton* ResourceMgr_LoadKeyFrameSkelByName(const char* path
 extern "C" KeyFrameAnimation* ResourceMgr_LoadKeyFrameAnimByName(const char* path) {
     return (KeyFrameAnimation*)ResourceGetDataByName(path);
 }
-
-
-//extern "C" SequenceData ResourceMgr_LoadSeqByName(const char* path) {
-//    SequenceData* sequence = (SequenceData*)ResourceGetDataByName(path);
-//    return *sequence;
-//}
-//
 //std::map<std::string, SoundFontSample*> cachedCustomSFs;
 #if 0
 extern "C" SoundFontSample* ReadCustomSample(const char* path) {
@@ -1133,11 +1176,11 @@ extern "C" SoundFontSample* ReadCustomSample(const char* path) {
 extern "C" SoundFontSample* ResourceMgr_LoadAudioSample(const char* path) {
     return (SoundFontSample*)ResourceGetDataByName(path);
 }
+#endif
 
 extern "C" SoundFont* ResourceMgr_LoadAudioSoundFont(const char* path) {
     return (SoundFont*)ResourceGetDataByName(path);
 }
-#endif
 extern "C" int ResourceMgr_OTRSigCheck(char* imgData) {
     uintptr_t i = (uintptr_t)(imgData);
 
@@ -1192,12 +1235,12 @@ extern "C" SkeletonHeader* ResourceMgr_LoadSkeletonByName(const char* path, Skel
 
 extern "C" void ResourceMgr_UnregisterSkeleton(SkelAnime* skelAnime) {
     if (skelAnime != nullptr)
-        LUS::SkeletonPatcher::UnregisterSkeleton(skelAnime);
+        SOH::SkeletonPatcher::UnregisterSkeleton(skelAnime);
 }
 
 extern "C" void ResourceMgr_ClearSkeletons(SkelAnime* skelAnime) {
     if (skelAnime != nullptr)
-        LUS::SkeletonPatcher::ClearSkeletons();
+        SOH::SkeletonPatcher::ClearSkeletons();
 }
 
 extern "C" s32* ResourceMgr_LoadCSByName(const char* path) {
@@ -1426,11 +1469,12 @@ extern "C" float OTRGetAspectRatio() {
 }
 
 extern "C" float OTRGetDimensionFromLeftEdge(float v) {
-    return (SCREEN_WIDTH / 2 - SCREEN_HEIGHT / 2 * OTRGetAspectRatio() + (v));
+    return (gfx_native_dimensions.width / 2 - gfx_native_dimensions.height / 2 * OTRGetAspectRatio() + (v));
 }
 
 extern "C" float OTRGetDimensionFromRightEdge(float v) {
-    return (SCREEN_WIDTH / 2 + SCREEN_HEIGHT / 2 * OTRGetAspectRatio() - (SCREEN_WIDTH - v));
+    return (gfx_native_dimensions.width / 2 + gfx_native_dimensions.height / 2 * OTRGetAspectRatio() -
+            (gfx_native_dimensions.width - v));
 }
 
 // Gets the width of the current render target area
@@ -1575,17 +1619,17 @@ extern "C" void BenSysFlashrom_WriteData(u8* saveBuffer, u32 pageNum, u32 pageCo
     FlashSlotFile flashSlotFile = FLASH_SLOT_FILE_UNAVAILABLE;
     bool isBackup = false;
     for (u32 i = 0; i < ARRAY_COUNT(gFlashSaveStartPages) - 1; i++) {
-        if (pageNum == gFlashSaveStartPages[i]) {
+        // Verify that the requested pages align with expected values
+        if (pageNum == (u32)gFlashSaveStartPages[i] &&
+            (pageCount == (u32)gFlashSaveNumPages[i] || pageCount == (u32)gFlashSpecialSaveNumPages[i])) {
             flashSlotFile = static_cast<FlashSlotFile>(i);
             break;
         }
     }
 
-    if (flashSlotFile == FLASH_SLOT_FILE_UNAVAILABLE) {
-        return;
-    }
-
     switch (flashSlotFile) {
+        case FLASH_SLOT_FILE_UNAVAILABLE:
+            return;
         case FLASH_SLOT_FILE_1_NEW_CYCLE_BACKUP:
         case FLASH_SLOT_FILE_2_NEW_CYCLE_BACKUP:
             isBackup = true;
@@ -1597,7 +1641,7 @@ extern "C" void BenSysFlashrom_WriteData(u8* saveBuffer, u32 pageNum, u32 pageCo
 
             std::string fileName = "save_" + std::to_string(flashSlotFile) + ".sav";
             if (isBackup) fileName += ".bak";
-        
+
             if (IS_VALID_FILE(save)) {
                 WriteSaveFile(fileName, save);
             } else {
@@ -1640,17 +1684,17 @@ extern "C" s32 BenSysFlashrom_ReadData(void* saveBuffer, u32 pageNum, u32 pageCo
     FlashSlotFile flashSlotFile = FLASH_SLOT_FILE_UNAVAILABLE;
     bool isBackup = false;
     for (u32 i = 0; i < ARRAY_COUNT(gFlashSaveStartPages) - 1; i++) {
-        if (pageNum == gFlashSaveStartPages[i]) {
+        // Verify that the requested pages align with expected values
+        if (pageNum == (u32)gFlashSaveStartPages[i] &&
+            (pageCount == (u32)gFlashSaveNumPages[i] || pageCount == (u32)gFlashSpecialSaveNumPages[i])) {
             flashSlotFile = static_cast<FlashSlotFile>(i);
             break;
         }
     }
 
-    if (flashSlotFile == FLASH_SLOT_FILE_UNAVAILABLE) {
-        return -1;
-    }
-
     switch (flashSlotFile) {
+        case FLASH_SLOT_FILE_UNAVAILABLE:
+            return -1;
         case FLASH_SLOT_FILE_1_NEW_CYCLE_BACKUP:
         case FLASH_SLOT_FILE_2_NEW_CYCLE_BACKUP:
             isBackup = true;
@@ -1699,7 +1743,6 @@ extern "C" s32 BenSysFlashrom_ReadData(void* saveBuffer, u32 pageNum, u32 pageCo
 
             memcpy(saveBuffer, &saveOptions, sizeof(SaveOptions));
             return 0;
-            break;
         }
     }
 }

@@ -29,12 +29,13 @@ ActorInit Oceff_Wipe6_InitVars = {
 };
 
 #include "overlays/ovl_Oceff_Wipe6/ovl_Oceff_Wipe6.h"
-Vtx* gOceff6VtxData;
+
+static Vtx* gOceff6VtxData;
 
 void OceffWipe6_Init(Actor* thisx, PlayState* play) {
     OceffWipe6* this = THIS;
 
-    gOceff6VtxData = ResourceMgr_LoadArrayByName(gOceff6Vtx);
+    gOceff6VtxData = ResourceMgr_LoadVtxByName(gOceff6Vtx);
 
     Actor_SetScale(&this->actor, 1.0f);
     this->counter = 0;
@@ -71,11 +72,20 @@ void OceffWipe6_Draw(Actor* thisx, PlayState* play) {
     activeCamEye = GET_ACTIVE_CAM(play)->eye;
     quakeOffset = Camera_GetQuakeOffset(GET_ACTIVE_CAM(play));
 
+    // #region 2S2H [Widescreen] Ocarina Effects
+    f32 effectDistance = 1220.0f; // Vanilla value
+    s32 x = OTRGetRectDimensionFromLeftEdge(0) << 2;
+    if (x < 0) {
+        // Only render if the screen is wider then original
+        effectDistance = 1220.0f / (OTRGetAspectRatio() * 0.85f); // Widescreen value
+    }
+    // #endregion
+
     if (this->counter < 32) {
         counter = this->counter;
-        z = Math_SinS(counter * 0x200) * 1220.0f;
+        z = Math_SinS(counter * 0x200) * effectDistance;
     } else {
-        z = 1220.0f;
+        z = effectDistance;
     }
 
     if (this->counter >= 80) {
@@ -84,7 +94,7 @@ void OceffWipe6_Draw(Actor* thisx, PlayState* play) {
         alpha = 255;
     }
 
-    for (i = 1; i < ResourceMgr_GetArraySizeByName(gOceff6Vtx); i += 2) {
+    for (i = 1; i < ResourceMgr_GetVtxArraySizeByName(gOceff6Vtx); i += 2) {
         gOceff6VtxData[i].v.cn[3] = alpha;
     }
 

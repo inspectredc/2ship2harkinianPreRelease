@@ -6,21 +6,17 @@
 #include "UIWidgets.hpp"
 #include <unordered_map>
 #include <string>
-#include "z64.h"
 #include "2s2h/Enhancements/Enhancements.h"
+#include "2s2h/DeveloperTools/DeveloperTools.h"
 #include "HudEditor.h"
 
 extern bool ShouldClearTextureCacheAtEndOfFrame;
 
-extern "C" PlayState* gPlayState;
-
-enum SeqPlayers {
-    /* 0 */ SEQ_BGM_MAIN,
-    /* 1 */ SEQ_FANFARE,
-    /* 2 */ SEQ_SFX,
-    /* 3 */ SEQ_BGM_SUB,
-    /* 4 */ SEQ_MAX
-};
+extern "C" {
+#include "z64.h"
+#include "functions.h"
+extern PlayState* gPlayState;
+}
 
 static const std::unordered_map<int32_t, const char*> textureFilteringMap = {
     { FILTER_THREE_POINT, "Three-Point" },
@@ -30,7 +26,6 @@ static const std::unordered_map<int32_t, const char*> textureFilteringMap = {
 
 static const std::unordered_map<LUS::AudioBackend, const char*> audioBackendsMap = {
     { LUS::AudioBackend::WASAPI, "Windows Audio Session API" },
-    { LUS::AudioBackend::PULSE, "PulseAudio" },
     { LUS::AudioBackend::SDL, "SDL" },
 };
 
@@ -42,8 +37,34 @@ static std::unordered_map<LUS::WindowBackend, const char*> windowBackendsMap = {
 };
 
 namespace BenGui {
+
+void DrawMenuBarIcon() {
+    static bool gameIconLoaded = false;
+    if (!gameIconLoaded) {
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->LoadTextureFromRawImage("Game_Icon", "textures/icons/g2ShipIcon.png");
+        gameIconLoaded = true;
+    }
+
+    if (LUS::Context::GetInstance()->GetWindow()->GetGui()->HasTextureByName("Game_Icon")) {
+#ifdef __SWITCH__
+        ImVec2 iconSize = ImVec2(20.0f, 20.0f);
+        float posScale = 1.0f;
+#elif defined(__WIIU__)
+        ImVec2 iconSize = ImVec2(16.0f * 2, 16.0f * 2);
+        float posScale = 2.0f;
+#else
+        ImVec2 iconSize = ImVec2(16.0f, 16.0f);
+        float posScale = 1.0f;
+#endif
+        ImGui::SetCursorPos(ImVec2(5, 5) * posScale);
+        ImGui::Image(LUS::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName("Game_Icon"), iconSize);
+        ImGui::SameLine();
+        ImGui::SetCursorPos(ImVec2(25, 0) * posScale);
+    }
+}
+
 void DrawBenMenu() {
-    if (UIWidgets::BeginMenu("Game")) {
+    if (UIWidgets::BeginMenu("2Ship")) {
         if (UIWidgets::MenuItem("Hide Menu Bar",
 #if !defined(__SWITCH__) && !defined(__WIIU__)
             "F1"
@@ -93,16 +114,19 @@ void DrawSettingsMenu() {
             UIWidgets::CVarSliderFloat("Master Volume: %.0f %%", "gSettings.Audio.MasterVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true });
 
             if (UIWidgets::CVarSliderFloat("Main Music Volume: %.0f %%", "gSettings.Audio.MainMusicVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true })) {
-                // Audio_SetGameVolume(SEQ_BGM_MAIN, CVarGetFloat("gSettings.Audio.MainMusicVolume", 1.0f));
+                AudioSeq_SetPortVolumeScale(SEQ_PLAYER_BGM_MAIN, CVarGetFloat("gSettings.Audio.MainMusicVolume", 1.0f));
             }
             if (UIWidgets::CVarSliderFloat("Sub Music Volume: %.0f %%", "gSettings.Audio.SubMusicVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true })) {
-                // Audio_SetGameVolume(SEQ_BGM_SUB, CVarGetFloat("gSettings.Audio.SubMusicVolume", 1.0f));
+                AudioSeq_SetPortVolumeScale(SEQ_PLAYER_BGM_SUB, CVarGetFloat("gSettings.Audio.SubMusicVolume", 1.0f));
             }
             if (UIWidgets::CVarSliderFloat("Sound Effects Volume: %.0f %%", "gSettings.Audio.SoundEffectsVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true })) {
-                // Audio_SetGameVolume(SEQ_SFX, CVarGetFloat("gSettings.Audio.SoundEffectsVolume", 1.0f));
+                AudioSeq_SetPortVolumeScale(SEQ_PLAYER_SFX, CVarGetFloat("gSettings.Audio.SoundEffectsVolume", 1.0f));
             }
             if (UIWidgets::CVarSliderFloat("Fanfare Volume: %.0f %%", "gSettings.Audio.FanfareVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true })) {
-                // Audio_SetGameVolume(SEQ_FANFARE, CVarGetFloat("gSettings.Audio.FanfareVolume", 1.0f));
+                AudioSeq_SetPortVolumeScale(SEQ_PLAYER_FANFARE, CVarGetFloat("gSettings.Audio.FanfareVolume", 1.0f));
+            }
+            if (UIWidgets::CVarSliderFloat("Ambience Volume: %.0f %%", "gSettings.Audio.AmbienceVolume", 0.0f, 1.0f, 1.0f, { .showButtons = false, .format = "", .isPercentage = true })) {
+                AudioSeq_SetPortVolumeScale(SEQ_PLAYER_AMBIENCE, CVarGetFloat("gSettings.Audio.AmbienceVolume", 1.0f));
             }
 
             auto currentAudioBackend = LUS::Context::GetInstance()->GetAudio()->GetAudioBackend();
@@ -264,6 +288,24 @@ extern std::shared_ptr<HudEditorWindow> mHudEditorWindow;
 
 void DrawEnhancementsMenu() {
     if (UIWidgets::BeginMenu("Enhancements")) {
+        
+        if (UIWidgets::BeginMenu("Masks")) {
+            UIWidgets::CVarCheckbox("Fierce Deity's Mask Anywhere", "gEnhancements.Masks.FierceDeitysAnywhere", {
+                .tooltip = "Allow using Fierce Deity's mask outside of boss rooms."
+            });
+
+            ImGui::EndMenu();
+        }
+        
+        UIWidgets::CVarCheckbox("Fast Text", "gEnhancements.TimeSavers.FastText", {
+            .tooltip = "Speeds up text rendering, and enables holding of B progress to next message"
+        });
+        UIWidgets::CVarCheckbox("Authentic logo", "gEnhancements.General.AuthenticLogo", {
+            .tooltip = "Hide the game version and build details and display the authentic model and texture on the boot logo start screen"
+        });
+        UIWidgets::CVarCheckbox("Skip Entrance Cutscenes", "gEnhancements.TimeSavers.SkipEntranceCutscenes");
+        UIWidgets::CVarCheckbox("Hide Title Cards", "gEnhancements.TimeSavers.HideTitleCards");
+        UIWidgets::CVarCheckbox("24 Hours Clock", "gEnhancements.General.24HoursClock");
 
         if (mHudEditorWindow) {
             UIWidgets::WindowButton("Hud Editor", "gWindows.HudEditor", mHudEditorWindow, {
@@ -298,6 +340,7 @@ extern std::shared_ptr<LUS::GuiWindow> mConsoleWindow;
 extern std::shared_ptr<LUS::GuiWindow> mGfxDebuggerWindow;
 extern std::shared_ptr<SaveEditorWindow> mSaveEditorWindow;
 extern std::shared_ptr<ActorViewerWindow> mActorViewerWindow;
+extern std::shared_ptr<CollisionViewerWindow> mCollisionViewerWindow;
 
 void DrawDeveloperToolsMenu() {
     if (UIWidgets::BeginMenu("Developer Tools", UIWidgets::Colors::Yellow)) {
@@ -306,6 +349,15 @@ void DrawDeveloperToolsMenu() {
         });
         
         UIWidgets::CVarCheckbox("Better Map Select", "gDeveloperTools.BetterMapSelect.Enabled");
+        if (UIWidgets::CVarCheckbox("Prevent Actor Update", "gDeveloperTools.PreventActorUpdate")) {
+            RegisterPreventActorUpdateHooks();
+        }
+        if (UIWidgets::CVarCheckbox("Prevent Actor Draw", "gDeveloperTools.PreventActorDraw")) {
+            RegisterPreventActorDrawHooks();
+        }
+        if (UIWidgets::CVarCheckbox("Prevent Actor Init", "gDeveloperTools.PreventActorInit")) {
+            RegisterPreventActorInitHooks();
+        }
         
         if (gPlayState != NULL) {
             ImGui::Separator();
@@ -326,6 +378,10 @@ void DrawDeveloperToolsMenu() {
             }
         }
         ImGui::Separator();
+        if (mCollisionViewerWindow) {
+            UIWidgets::WindowButton("Collision Viewer", "gWindows.CollisionViewer", mCollisionViewerWindow,
+                { .tooltip = "Draws collision to the screen" });
+        }
         if (mStatsWindow) {
             UIWidgets::WindowButton("Stats", "gWindows.Stats", mStatsWindow, {
                 .tooltip = "Shows the stats window, with your FPS and frametimes, and the OS you're playing on"
@@ -357,6 +413,8 @@ void DrawDeveloperToolsMenu() {
 
 void BenMenuBar::DrawElement() {
     if (ImGui::BeginMenuBar()) {
+        DrawMenuBarIcon();
+
         static ImVec2 sWindowPadding(8.0f, 8.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, sWindowPadding);
 
@@ -387,4 +445,4 @@ void BenMenuBar::DrawElement() {
     }
 }
 }
- // namespace BenGui 
+// namespace BenGui

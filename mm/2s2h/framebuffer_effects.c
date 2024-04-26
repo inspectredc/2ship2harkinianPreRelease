@@ -1,7 +1,8 @@
 #include "framebuffer_effects.h"
 #include "global.h"
 
-int gfx_create_framebuffer(uint32_t width, uint32_t height);
+int gfx_create_framebuffer(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
+                           uint8_t resize);
 
 s32 gPauseFrameBuffer = -1;
 s32 gBlurFrameBuffer = -1;
@@ -9,17 +10,24 @@ s32 gBlurFrameBuffer = -1;
 // i.e. the VisMono and VisFbuf effects
 s32 gReusableFrameBuffer = -1;
 
+// Picto box buffer is unscaled at 320x240
+s32 gPictoBoxFrameBuffer = -1;
+
 void FB_CreateFramebuffers(void) {
     if (gPauseFrameBuffer == -1) {
-        gPauseFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+        gPauseFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, true);
     }
 
     if (gBlurFrameBuffer == -1) {
-        gBlurFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+        gBlurFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, true);
     }
 
     if (gReusableFrameBuffer == -1) {
-        gReusableFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+        gReusableFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, true);
+    }
+
+    if (gPictoBoxFrameBuffer == -1) {
+        gPictoBoxFrameBuffer = gfx_create_framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, false);
     }
 }
 
@@ -28,6 +36,7 @@ void FB_CreateFramebuffers(void) {
  * Setting oncePerFrame ensures that the copy will only happen once every game frame. This
  * is important for effects that could be affected by increased frame interpolation (like motion blur).
  * A pointer to a boolean is passed to the render for the render to set once the copy has been performed.
+ * This function uses opcodes from f3dex2 but may be called when s2dex is loaded, such as during shrink window. Make sure f3dex2 is loaded before this function is called.
  */
 void FB_CopyToFramebuffer(Gfx** gfxp, s32 fb_src, s32 fb_dest, u8 oncePerFrame, u8* hasCopied) {
     Gfx* gfx = *gfxp;
@@ -89,7 +98,8 @@ void FB_DrawFromFramebuffer(Gfx** gfxp, s32 fb, u8 alpha) {
 }
 
 /**
- * Similar to FB_DrawFromFramebuffer, but scales the image relative to the center of the screen
+ * Similar to FB_DrawFromFramebuffer, but scales the image relative to the center of the screen.
+ * This function uses opcodes from f3dex2 but may be called when s2dex is loaded, such as during shrink window. Make sure f3dex2 is loaded before this function is called.
  */
 void FB_DrawFromFramebufferScaled(Gfx** gfxp, s32 fb, u8 alpha, float scaleX, float scaleY) {
     Gfx* gfx = *gfxp;

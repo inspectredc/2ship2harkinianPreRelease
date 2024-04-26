@@ -35,6 +35,7 @@ u8 sMotionBlurStatus;
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "debug.h"
 #include "2s2h/Enhancements/FrameInterpolation/FrameInterpolation.h"
+#include "2s2h/DeveloperTools/CollisionViewer.h"
 #include "2s2h/framebuffer_effects.h"
 #include <string.h>
 #include <GameVersions.h>
@@ -49,6 +50,9 @@ PlayState* gPlayState;
 // #region 2S2H [JP] Making sJPMessageEntryTablePtr available
 MessageTableEntry* sJPMessageEntryTablePtr = NULL;
 // #endregion
+
+// Track when the notebook is closed so we can refresh our framebuffer captures
+u8 sJustClosedBomberNotebook = false;
 
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
@@ -99,7 +103,8 @@ void Play_DrawMotionBlur(PlayState* this) {
         // 2S2H [Port] When the render size changes, we need to skip the blur for one frame to
         // avoid rendering and copying a blank framebuffer
         if (sMotionBlurStatus == MOTION_BLUR_PROCESS &&
-            (lastBlurWidth != OTRGetGameRenderWidth() || lastBlurHeight != OTRGetGameRenderHeight())) {
+            (lastBlurWidth != OTRGetGameRenderWidth() || lastBlurHeight != OTRGetGameRenderHeight() ||
+             sJustClosedBomberNotebook)) {
             sMotionBlurStatus = MOTION_BLUR_SETUP;
         }
 
@@ -410,6 +415,8 @@ void Play_Destroy(GameState* thisx) {
         gfxCtx->yScale = gViConfigYScale;
         gfxCtx->updateViMode = true;
         sBombersNotebookOpen = false;
+
+        sJustClosedBomberNotebook = false;
     }
 
     BombersNotebook_Destroy(&sBombersNotebook);
@@ -1100,6 +1107,8 @@ void Play_Update(PlayState* this) {
             sBombersNotebookOpen = true;
             sBombersNotebook.loadState = BOMBERS_NOTEBOOK_LOAD_STATE_NONE;
         }
+
+        sJustClosedBomberNotebook = false;
     } else if (CHECK_BTN_ALL(CONTROLLER1(&this->state)->press.button, BTN_L) ||
                CHECK_BTN_ALL(CONTROLLER1(&this->state)->press.button, BTN_B) ||
                CHECK_BTN_ALL(CONTROLLER1(&this->state)->press.button, BTN_START) || (gIrqMgrResetStatus != 0)) {
@@ -1111,6 +1120,8 @@ void Play_Update(PlayState* this) {
         this->msgCtx.currentTextId = 0;
         this->msgCtx.stateTimer = 0;
         Audio_PlaySfx(NA_SE_SY_CANCEL);
+
+        sJustClosedBomberNotebook = true;
     }
     if (sBombersNotebookOpen) {
         BombersNotebook_Update(this, &sBombersNotebook, this->state.input);
@@ -1182,7 +1193,7 @@ void Play_DrawMain(PlayState* this) {
     if ((R_PAUSE_BG_PRERENDER_STATE == PAUSE_BG_PRERENDER_PROCESS ||
          R_PAUSE_BG_PRERENDER_STATE == PAUSE_BG_PRERENDER_READY) &&
         (lastPauseWidth != OTRGetGameRenderWidth() || lastPauseHeight != OTRGetGameRenderHeight() ||
-         !hasCapturedPauseBuffer)) {
+         !hasCapturedPauseBuffer || sJustClosedBomberNotebook)) {
         R_PAUSE_BG_PRERENDER_STATE = PAUSE_BG_PRERENDER_SETUP;
         recapturePauseBuffer = true;
     }
@@ -1450,21 +1461,65 @@ void Play_DrawMain(PlayState* this) {
                     R_PAUSE_BG_PRERENDER_STATE = PAUSE_BG_PRERENDER_PROCESS;
                     this->pauseBgPreRender.fbufSave = gfxCtx->zbuffer;
                     this->pauseBgPreRender.cvgSave = this->unk_18E58;
+
+                    // #region 2S2H [Port] Custom handling for pause prerender background capture
+                    lastPauseWidth = OTRGetGameRenderWidth();
+                    lastPauseHeight = OTRGetGameRenderHeight();
+                    hasCapturedPauseBuffer = false;
+
+                    FB_CopyToFramebuffer(&sp74, 0, gPauseFrameBuffer, false, &hasCapturedPauseBuffer);
+
+                    // Set the state back to ready after the recapture is done
+                    if (recapturePauseBuffer) {
+                        R_PAUSE_BG_PRERENDER_STATE = PAUSE_BG_PRERENDER_READY;
+                    }
+                    // #endregion
                 } else if (R_PICTO_PHOTO_STATE == PICTO_PHOTO_STATE_SETUP) {
                     R_PICTO_PHOTO_STATE = PICTO_PHOTO_STATE_PROCESS;
                     this->pauseBgPreRender.fbufSave = gfxCtx->zbuffer;
-                    this->pauseBgPreRender.cvgSave = this->unk_18E58;
+                    // BENTODO: Add this back when coverage is figured out - for the anti aliasing filter
+                    // this->pauseBgPreRender.cvgSave = this->unk_18E58;
+                    this->pauseBgPreRender.cvgSave = NULL;
+
+                    // #region 2S2H [Port] Custom handling for picto box capture
+                    // Copy to our reusable buffer first
+                    FB_CopyToFramebuffer(&sp74, 0, gReusableFrameBuffer, false, NULL);
+
+                    // Set the picto framebuffer as the draw target (320x240)
+                    gsSPSetFB(sp74++, gPictoBoxFrameBuffer);
+
+                    int16_t s0 = 0, t0 = 0;
+                    int16_t s1 = OTRGetGameRenderWidth();
+                    int16_t t1 = OTRGetGameRenderHeight();
+
+                    float aspectRatio = OTRGetAspectRatio();
+                    float fourByThree = 4.0f / 3.0f;
+
+                    // Adjsut the texture coordinates so that only a 4:3 region from the center is drawn
+                    // to the picto buffer. Currently ratios smaller than 4:3 will just stretch to fill.
+                    if (aspectRatio > fourByThree) {
+                        int16_t adjustedWidth = OTRGetGameRenderWidth() / (aspectRatio / fourByThree);
+                        s0 = (OTRGetCurrentWidth() - adjustedWidth) / 2;
+                        s1 -= s0;
+                    }
+
+                    gDPSetTextureImageFB(sp74++, 0, 0, 0, gReusableFrameBuffer);
+                    gDPImageRectangle(sp74++, 0 << 2, 0 << 2, s0, t0, SCREEN_WIDTH << 2, SCREEN_HEIGHT << 2, s1, t1,
+                                      G_TX_RENDERTILE, OTRGetGameRenderWidth(), OTRGetGameRenderHeight());
+
+                    // Read the picto box framebuffer back as a rgba16 buffer
+                    gDPReadFB(sp74++, gPictoBoxFrameBuffer, this->pauseBgPreRender.fbufSave, 0, 0, SCREEN_WIDTH,
+                              SCREEN_HEIGHT);
+
+                    gsSPResetFB(sp74++);
+                    // #endregion
                 } else {
                     gTransitionTileState = TRANS_TILE_PROCESS;
                     this->pauseBgPreRender.fbufSave = gfxCtx->zbuffer;
                     this->pauseBgPreRender.cvgSave = NULL;
+
+                    // BENTODO: Figure out what the transition does with framebuffers
                 }
-
-                lastPauseWidth = OTRGetGameRenderWidth();
-                lastPauseHeight = OTRGetGameRenderHeight();
-                hasCapturedPauseBuffer = false;
-
-                FB_CopyToFramebuffer(&sp74, 0, gPauseFrameBuffer, false, &hasCapturedPauseBuffer);
 
                 gSPEndDisplayList(sp74++);
                 Graph_BranchDlist(sp70, sp74);
@@ -1472,14 +1527,14 @@ void Play_DrawMain(PlayState* this) {
                 this->unk_18B49 = 2;
                 SREG(33) |= 1;
 
-                // 2S2H [Port] Set the state back to ready after the recapture is done
-                if (recapturePauseBuffer) {
-                    R_PAUSE_BG_PRERENDER_STATE = PAUSE_BG_PRERENDER_READY;
+                // 2S2H [Port] Continue to render the post world for pausing to avoid flashing the HUD
+                if (gTransitionTileState == TRANS_TILE_PROCESS || R_PICTO_PHOTO_STATE == PICTO_PHOTO_STATE_PROCESS) {
+                    goto SkipPostWorldDraw;
                 }
-
-                // 2S2H [Port] Continue to render the post world to avoid flashing the HUD
-                // goto SkipPostWorldDraw;
             }
+
+            // Draw collision before the PostWorldDraw label so that collision is not drawn during pause
+            DrawCollisionViewer();
 
         PostWorldDraw:
             if (1) {
@@ -2431,4 +2486,6 @@ void Play_Init(GameState* thisx) {
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    sJustClosedBomberNotebook = false;
 }
