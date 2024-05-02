@@ -55,3 +55,18 @@ static const ALIGN_ASSET(2) char gThreeDayClockHour23Tex[] = dgThreeDayClockHour
 
 #define dgThreeDayClockHour24Tex "__OTR__textures/parameter_static/gThreeDayClockHour24Tex"
 static const ALIGN_ASSET(2) char gThreeDayClockHour24Tex[] = dgThreeDayClockHour24Tex;
+
+#define dgPauseSavePromptENGTex "__OTR__textures/icon_item_static/gPauseSavePromptENGTex"
+static const ALIGN_ASSET(2) char gPauseSavePromptENGTex[] = dgPauseSavePromptENGTex;
+
+#define dgPauseYesENGTex "__OTR__textures/icon_item_static/gPauseYesENGTex"
+static const ALIGN_ASSET(2) char gPauseYesENGTex[] = dgPauseYesENGTex;
+
+#define dgPauseNoENGTex "__OTR__textures/icon_item_static/gPauseNoENGTex"
+static const ALIGN_ASSET(2) char gPauseNoENGTex[] = dgPauseNoENGTex;
+
+#define dgPauseSaveConfirmationENGTex "__OTR__textures/icon_item_static/gPauseSaveConfirmationENGTex"
+static const ALIGN_ASSET(2) char gPauseSaveConfirmationENGTex[] = dgPauseSaveConfirmationENGTex;
+
+#define dgContinuePlayingENGTex "__OTR__textures/icon_item_static/gContinuePlayingENGTex"
+static const ALIGN_ASSET(2) char gContinuePlayingENGTex[] = dgContinuePlayingENGTex;
