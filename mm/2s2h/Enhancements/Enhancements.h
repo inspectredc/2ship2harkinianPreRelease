@@ -2,6 +2,7 @@
 #define ENHANCEMENTS_H
 
 #include "Camera/FreeLook.h"
+#include "Camera/OotCamera.h"
 #include "Cheats/MoonJump.h"
 #include "Cheats/Infinite.h"
 #include "Cycle/EndOfCycle.h"

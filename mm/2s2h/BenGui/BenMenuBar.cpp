@@ -317,6 +317,11 @@ void DrawEnhancementsMenu() {
             CVarSetFloat("gEnhancements.Camera.FreeLook.MaxY", std::max(maxY, minY));
             CVarSetFloat("gEnhancements.Camera.FreeLook.MinY", std::min(maxY, minY));
 
+            ImGui::SeparatorText("OOT Camera");
+            UIWidgets::CVarCheckbox("OOT Camera", "gEnhancements.Camera.OotCamera", {
+                .tooltip = "WIP For Porting the OOT Camera to MM."
+            });
+
             ImGui::EndMenu();
         }
 
