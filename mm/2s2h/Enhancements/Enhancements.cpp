@@ -3,6 +3,7 @@
 void InitEnhancements() {
     // Camera
     RegisterCameraFreeLook();
+    RegisterDebugCamera();
 
     // Cheats
     RegisterInfiniteCheats();

@@ -65,6 +65,7 @@ Vec3f D_801EDDF0;
 #include "2s2h/Enhancements/FrameInterpolation/FrameInterpolation.h"
 #include "2s2h/Enhancements/GameInteractor/GameInteractor.h"
 #include "2s2h/Enhancements/Camera/FreeLook.h"
+#include "2s2h/Enhancements/Camera/DebugUtils.h"
 
 // Camera will reload its paramData. Usually that means setting the read-only data from what is stored in
 // CameraModeValue arrays. Although sometimes some read-write data is reset as well
@@ -6995,6 +6996,9 @@ void Camera_Destroy(Camera* camera) {
     }
 }
 
+DebugCam debugCam;
+extern void DebugCamera_Init(DebugCam* debugCam, Camera* cameraPtr);
+
 void Camera_Init(Camera* camera, View* view, CollisionContext* colCtx, PlayState* play) {
     Camera* cameraPtr;
     s32 i;
@@ -7004,6 +7008,7 @@ void Camera_Init(Camera* camera, View* view, CollisionContext* colCtx, PlayState
     __osMemset(camera, 0, sizeof(Camera));
 
     camera->play = sCamPlayState = play;
+    DebugCamera_Init(&debugCam, camera);
     curUID = sCameraNextUID;
     sCameraNextUID++;
     while (curUID != 0) {

@@ -317,6 +317,13 @@ void DrawEnhancementsMenu() {
             CVarSetFloat("gEnhancements.Camera.FreeLook.MaxY", std::max(maxY, minY));
             CVarSetFloat("gEnhancements.Camera.FreeLook.MinY", std::min(maxY, minY));
 
+            ImGui::SeparatorText("Debug Camera");
+            if (UIWidgets::CVarCheckbox("Debug Camera", "gEnhancements.Camera.DebugCamera", {
+                .tooltip = "Enables Debug Camera."
+            })) {
+                RegisterDebugCamera();
+            }
+
             ImGui::EndMenu();
         }
 
