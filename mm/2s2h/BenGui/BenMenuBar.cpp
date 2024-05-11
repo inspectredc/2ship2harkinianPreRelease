@@ -347,6 +347,13 @@ void DrawEnhancementsMenu() {
             UIWidgets::CVarSliderFloat("Camera Speed: %.0f %", "gEnhancements.Camera.DebugCam.CameraSpeed", 0.1f, 3.0f, 0.5f);
             UIWidgets::CVarSliderInt("Controller Port: %d", "gEnhancements.Camera.DebugCam.Port", 1, 4, 2);
 
+            ImGui::SeparatorText("Silly");
+            if (UIWidgets::CVarCheckbox("SPIIIIIIN", "gEnhancements.Camera.Spin", {
+                .tooltip = "Constantly spins the camera.",
+            })) {
+                RegisterCameraRotate();
+            }
+
             ImGui::EndMenu();
         }
 

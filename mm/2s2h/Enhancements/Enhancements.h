@@ -3,6 +3,7 @@
 
 #include "Camera/DebugCam.h"
 #include "Camera/FreeLook.h"
+#include "Camera/Rotate.h"
 #include "Cheats/MoonJump.h"
 #include "Cheats/Infinite.h"
 #include "Cheats/UnbreakableRazorSword.h"
