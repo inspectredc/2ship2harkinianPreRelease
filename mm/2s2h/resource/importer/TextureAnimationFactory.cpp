@@ -2,19 +2,21 @@
 #include "2s2h/resource/type/TextureAnimation.h"
 #include <libultraship/libultraship.h>
 #include "spdlog/spdlog.h"
+#include <stdlib.h>
 
 namespace SOH {
 
-std::shared_ptr<LUS::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadResource(std::shared_ptr<LUS::File> file) {
+std::shared_ptr<Ship::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadResource(std::shared_ptr<Ship::File> file) {
     if (!FileHasValidFormatAndReader(file)) {
         return nullptr;
     }
 
     auto tAnim = std::make_shared<TextureAnimation>(file->InitData);
-    auto reader = std::get<std::shared_ptr<LUS::BinaryReader>>(file->Reader);
+    auto reader = std::get<std::shared_ptr<Ship::BinaryReader>>(file->Reader);
 
     const size_t numEntries = reader->ReadUInt32();
 
+    // `e` is a void* and must be allocated and freed with malloc/free
     for (size_t i = 0; i < numEntries; i++) {
         AnimatedMaterial anim;
         anim.segment = reader->ReadInt8();
@@ -22,7 +24,13 @@ std::shared_ptr<LUS::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadRes
 
         switch ((TextureAnimationParamsType)anim.type) {
             case TextureAnimationParamsType::SingleScroll: {
-                auto* e = new AnimatedMatTexScrollParams;
+                auto* e = (AnimatedMatTexScrollParams*)malloc(sizeof(AnimatedMatTexScrollParams));
+                if (e == nullptr) {
+                    SPDLOG_CRITICAL("Failed to allocate memory for AnimatedMatTexScrollParams");
+                    std::bad_alloc ex;
+                    throw ex;
+                }
+
                 e->xStep = reader->ReadInt8();
                 e->yStep = reader->ReadInt8();
                 e->width = reader->ReadUByte();
@@ -31,7 +39,13 @@ std::shared_ptr<LUS::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadRes
                 break;
             }
             case TextureAnimationParamsType::DualScroll: {
-                auto* e = new AnimatedMatTexScrollParams[2];
+                auto* e = (AnimatedMatTexScrollParams*)malloc(sizeof(AnimatedMatTexScrollParams) * 2);
+                if (e == nullptr) {
+                    SPDLOG_CRITICAL("Failed to allocate memory for AnimatedMatTexScrollParams");
+                    std::bad_alloc ex;
+                    throw ex;
+                }
+
                 e[0].xStep = reader->ReadInt8();
                 e[0].yStep = reader->ReadInt8();
                 e[0].width = reader->ReadUByte();
@@ -46,7 +60,13 @@ std::shared_ptr<LUS::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadRes
             case TextureAnimationParamsType::ColorChange:
             case TextureAnimationParamsType::ColorChangeLERP:
             case TextureAnimationParamsType::ColorChangeLagrange: {
-                auto* e = new AnimatedMatColorParams;
+                auto* e = (AnimatedMatColorParams*)malloc(sizeof(AnimatedMatColorParams));
+                if (e == nullptr) {
+                    SPDLOG_CRITICAL("Failed to allocate memory for AnimatedMatColorParams");
+                    std::bad_alloc ex;
+                    throw ex;
+                }
+
                 e->keyFrameLength = reader->ReadUInt16();
                 e->keyFrameCount = reader->ReadUInt16();
 
@@ -91,8 +111,12 @@ std::shared_ptr<LUS::IResource> ResourceFactoryBinaryTextureAnimationV0::ReadRes
                 break;
             }
             case TextureAnimationParamsType::TextureCycle: {
-                auto* e = new AnimatedMatTexCycleParams;
-
+                auto* e = (AnimatedMatTexCycleParams*)malloc(sizeof(AnimatedMatTexCycleParams));
+                if (e == nullptr) {
+                    SPDLOG_CRITICAL("Failed to allocate memory for AnimatedMatTexCycleParams");
+                    std::bad_alloc ex;
+                    throw ex;
+                }
                 e->keyFrameLength = reader->ReadUInt16();
                 uint32_t textureListSize = reader->ReadUInt32();
                 e->textureList = new void*[textureListSize];

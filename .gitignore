@@ -1,8 +1,10 @@
+*.zip
 *.otr
 .vscode
 *.swp
 logs
 *.nix
+2ship2harkinian.json
 shipofharkinian.json
 *.sav
 .envrc

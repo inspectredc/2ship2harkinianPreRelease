@@ -7,6 +7,7 @@
 #include "z_en_estone.h"
 #include "objects/object_eg/object_eg.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
+#include "2s2h/Enhancements/FrameInterpolation/FrameInterpolation.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -147,8 +148,6 @@ void EnEstone_Active(EnEstone* this, PlayState* play) {
         Actor_PlaySfx(&this->actor, NA_SE_EV_WALL_BROKEN);
         this->actionFunc = EnEstone_Inactive;
     } else {
-        //! FAKE: https://decomp.me/scratch/YiPVN
-    label:
         this->actor.shape.shadowScale = 4500.0f * this->scale;
         Actor_SetScale(&this->actor, this->scale);
     }
@@ -269,6 +268,7 @@ void EnEstone_DrawEffects(EnEstone* this, PlayState* play) {
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
     for (i = 0; i < ARRAY_COUNT(this->effects); i++, effect++) {
         if (effect->isActive) {
+            FrameInterpolation_RecordOpenChild(effect, i);
             Matrix_Translate(effect->pos.x, effect->pos.y, effect->pos.z, MTXMODE_NEW);
             Matrix_RotateXS(effect->rot.x, MTXMODE_APPLY);
             Matrix_RotateYS(effect->rot.y, MTXMODE_APPLY);
@@ -279,6 +279,7 @@ void EnEstone_DrawEffects(EnEstone* this, PlayState* play) {
             gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x80, 255, 255, 255, 255);
             gDPSetEnvColor(POLY_OPA_DISP++, 255, 255, 255, 255);
             gSPDisplayList(POLY_OPA_DISP++, gameplay_keep_DL_06AB30);
+            FrameInterpolation_RecordCloseChild();
         }
     }
 
