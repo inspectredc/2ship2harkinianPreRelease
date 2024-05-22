@@ -45,28 +45,15 @@ const char* gBombersNotebookPhotos[] = {
 };
 
 const char* gQuestIcons[] = {
-    gQuestIconGoldSkulltulaTex,
-    gQuestIconHeartContainerTex,
-    gQuestIconPieceOfHeartTex,
-    gQuestIconPieceOfHeart2Tex,
-    gQuestIconHeartContainer2Tex,
-    gQuestIconHeartContainer3Tex,
-    gQuestIconBossKeyTex,
-    gQuestIconCompassTex,
-    gQuestIconDungeonMapTex,
-    gQuestIconGoldSkulltula2Tex,
-    gQuestIconSmallKeyTex,
-    gQuestIconSmallMagicJarTex,
-    gQuestIconBigMagicJarTex,
-    gQuestIconLinkHumanFaceTex,
+    gQuestIconGoldSkulltulaTex,   gQuestIconHeartContainerTex,  gQuestIconPieceOfHeartTex, gQuestIconPieceOfHeart2Tex,
+    gQuestIconHeartContainer2Tex, gQuestIconHeartContainer3Tex, gQuestIconBossKeyTex,      gQuestIconCompassTex,
+    gQuestIconDungeonMapTex,      gQuestIconGoldSkulltula2Tex,  gQuestIconSmallKeyTex,     gQuestIconSmallMagicJarTex,
+    gQuestIconBigMagicJarTex,     gQuestIconLinkHumanFaceTex,
 };
 
 const char* gMessageBackgrounds[] = {
-    gMessageDefaultBackgroundTex,
-    gMessageSignBackgroundTex,
-    gMessageNoteStaffBackgroundTex,
-    gMessageFadingBackgroundTex,
-    gMessageNotebookBackgroundTex,
+    gMessageDefaultBackgroundTex, gMessageSignBackgroundTex,     gMessageNoteStaffBackgroundTex,
+    gMessageFadingBackgroundTex,  gMessageNotebookBackgroundTex,
 };
 
 // This looks very similar to gItemIcons, but it's not the same! Make sure you're using the
@@ -319,7 +306,8 @@ s32 Message_ShouldAdvance(PlayState* play) {
             Audio_PlaySfx(NA_SE_SY_MESSAGE_PASS);
         }
         return CHECK_BTN_ALL(controller->press.button, BTN_A) || CHECK_BTN_ALL(controller->press.button, BTN_B) ||
-               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
+               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just
+               // pressed
                (CVarGetInteger("gEnhancements.Dialogue.FastText", 0) && CHECK_BTN_ALL(controller->cur.button, BTN_B)) ||
                CHECK_BTN_ALL(controller->press.button, BTN_CUP);
     }
@@ -333,7 +321,8 @@ s32 Message_ShouldAdvanceSilent(PlayState* play) {
         return CHECK_BTN_ALL(controller->press.button, BTN_A);
     } else {
         return CHECK_BTN_ALL(controller->press.button, BTN_A) || CHECK_BTN_ALL(controller->press.button, BTN_B) ||
-               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
+               // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just
+               // pressed
                (CVarGetInteger("gEnhancements.Dialogue.FastText", 0) && CHECK_BTN_ALL(controller->cur.button, BTN_B)) ||
                CHECK_BTN_ALL(controller->press.button, BTN_CUP);
     }
@@ -2196,14 +2185,16 @@ void Message_LoadItemIcon(PlayState* play, u16 itemId, s16 arg2) {
         msgCtx->unk12010 = (msgCtx->unk11FF8 - D_801CFF70[gSaveContext.options.language]);
         msgCtx->unk12012 = (arg2 + 8);
         msgCtx->unk12014 = 0x20;
-        // CmpDma_LoadFile(SEGMENT_ROM_START(schedule_dma_static_yar), ITEM_POTION_BLUE, msgCtx->textboxSegment + 0x1000,
+        // CmpDma_LoadFile(SEGMENT_ROM_START(schedule_dma_static_yar), ITEM_POTION_BLUE, msgCtx->textboxSegment +
+        // 0x1000,
         //                 0x400);
         msgCtx->textboxSegment[TEXTBOX_SEG_ICON] = gBombersNotebookPhotos[ITEM_POTION_BLUE];
     } else if (itemId >= ITEM_B8) {
         msgCtx->unk12010 = (msgCtx->unk11FF8 - D_801CFF70[gSaveContext.options.language]);
         msgCtx->unk12012 = (arg2 + 8);
         msgCtx->unk12014 = 0x20;
-        // CmpDma_LoadFile(SEGMENT_ROM_START(schedule_dma_static_yar), (itemId - ITEM_B8), msgCtx->textboxSegment + 0x1000,
+        // CmpDma_LoadFile(SEGMENT_ROM_START(schedule_dma_static_yar), (itemId - ITEM_B8), msgCtx->textboxSegment +
+        // 0x1000,
         //                 0x800);
         msgCtx->textboxSegment[TEXTBOX_SEG_ICON] = gBombersNotebookPhotos[itemId - ITEM_B8];
     } else if (itemId >= ITEM_SKULL_TOKEN) {
@@ -2662,9 +2653,10 @@ void Message_Decode(PlayState* play) {
                 spC0 += playerNameLen * (16.0f * msgCtx->textCharScale);
             } else if (curChar == 0x201) {
                 // #region 2S2H [Port]
-                //DmaMgr_SendRequest0(msgCtx->textboxSegment + 0x1000, SEGMENT_ROM_START(message_texture_static), 0x900);
-                //DmaMgr_SendRequest0(msgCtx->textboxSegment + 0x1900, SEGMENT_ROM_START(message_texture_static) + 0x900,
-                 //                   0x900);
+                // DmaMgr_SendRequest0(msgCtx->textboxSegment + 0x1000, SEGMENT_ROM_START(message_texture_static),
+                // 0x900); DmaMgr_SendRequest0(msgCtx->textboxSegment + 0x1900,
+                // SEGMENT_ROM_START(message_texture_static) + 0x900,
+                //                   0x900);
                 msgCtx->textboxSegment[TEXTBOX_SEG_BG_1] = gMessageXLeftTex;
                 msgCtx->textboxSegment[TEXTBOX_SEG_BG_2] = gMessageXRightTex;
                 // #endregion
@@ -3447,7 +3439,7 @@ void func_80150A84(PlayState* play) {
 
     if (D_801CFC78[textBoxType] != 14) {
         // #region 2S2H [Port]
-        //DmaMgr_SendRequest0(msgCtx->textboxSegment,
+        // DmaMgr_SendRequest0(msgCtx->textboxSegment,
         //                    SEGMENT_ROM_START(message_static) + D_801CFC78[textBoxType] * 0x1000, 0x1000);
         msgCtx->textboxSegment[TEXTBOX_SEG_TYPE] = gMessageBackgrounds[D_801CFC78[textBoxType]];
         // #endregion
@@ -3584,8 +3576,8 @@ void Message_OpenText(PlayState* play, u16 textId) {
         MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
         msgCtx->msgLength = msgEntry->msgSize;
         memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
-        //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(staff_message_data_static) + font->messageStart,
-        //                    font->messageEnd);
+        // DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(staff_message_data_static) + font->messageStart,
+        //                     font->messageEnd);
     } else if (gSaveContext.options.language == LANGUAGE_JPN) {
         Message_FindMessage(play, textId);
         MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
@@ -3599,9 +3591,9 @@ void Message_OpenText(PlayState* play, u16 textId) {
         MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
         msgCtx->msgLength = msgEntry->msgSize;
         memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
-        //msgCtx->msgLength = font->messageEnd;
-        //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
-        //                    font->messageEnd);
+        // msgCtx->msgLength = font->messageEnd;
+        // DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
+        //                     font->messageEnd);
     }
 
     msgCtx->choiceNum = 0;
@@ -3704,17 +3696,17 @@ void func_801514B0(PlayState* play, u16 arg1, u8 arg2) {
         memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
         // msgCtx->msgLength = font->messageEnd;
         // BENTODO
-        //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
+        // DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
         //                    font->messageEnd);
     } else {
         Message_FindMessageNES(play, arg1);
         MessageTableEntry* msgEntry = (MessageTableEntry*)font->messageStart;
         msgCtx->msgLength = msgEntry->msgSize;
         memcpy(&font->msgBuf, msgEntry->segment, msgEntry->msgSize);
-        //msgCtx->msgLength = font->messageEnd;
-        // BENTODO
-        //DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
-        //                    font->messageEnd);
+        // msgCtx->msgLength = font->messageEnd;
+        //  BENTODO
+        // DmaMgr_SendRequest0(&font->msgBuf, SEGMENT_ROM_START(message_data_static) + font->messageStart,
+        //                     font->messageEnd);
     }
     msgCtx->choiceNum = 0;
     msgCtx->textUnskippable = false;
@@ -3729,7 +3721,7 @@ void func_801514B0(PlayState* play, u16 arg1, u8 arg2) {
     msgCtx->unk11F0C = msgCtx->unk11F08 & 0xF;
     msgCtx->textUnskippable = true;
     // #region 2S2H [Port]
-    //DmaMgr_SendRequest0(msgCtx->textboxSegment, SEGMENT_ROM_START(message_static) + (D_801CFC78[0] << 12), 0x1000);
+    // DmaMgr_SendRequest0(msgCtx->textboxSegment, SEGMENT_ROM_START(message_static) + (D_801CFC78[0] << 12), 0x1000);
     msgCtx->textboxSegment[TEXTBOX_SEG_TYPE] = gMessageBackgrounds[D_801CFC78[0]];
     // #endregion
     msgCtx->textboxColorRed = 0;
@@ -4140,8 +4132,9 @@ void Message_DrawTextBox(PlayState* play, Gfx** gfxP) {
     if (((u32)msgCtx->textBoxType == TEXTBOX_TYPE_0) || (msgCtx->textBoxType == TEXTBOX_TYPE_2) ||
         (msgCtx->textBoxType == TEXTBOX_TYPE_6) || (msgCtx->textBoxType == TEXTBOX_TYPE_8) ||
         (msgCtx->textBoxType == TEXTBOX_TYPE_9) || (msgCtx->textBoxType == TEXTBOX_TYPE_A)) {
-        gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment[TEXTBOX_SEG_TYPE], G_IM_FMT_I, 128, 64, 0, G_TX_MIRROR | G_TX_WRAP,
-                               G_TX_NOMIRROR | G_TX_WRAP, 7, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment[TEXTBOX_SEG_TYPE], G_IM_FMT_I, 128, 64, 0,
+                               G_TX_MIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, 7, G_TX_NOMASK, G_TX_NOLOD,
+                               G_TX_NOLOD);
     } else {
         gDPPipeSync(gfx++);
 
@@ -4152,8 +4145,9 @@ void Message_DrawTextBox(PlayState* play, Gfx** gfxP) {
         } else {
             gDPSetEnvColor(gfx++, 50, 20, 0, 255);
         }
-        gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment[TEXTBOX_SEG_TYPE], G_IM_FMT_IA, 128, 64, 0, G_TX_MIRROR | G_TX_WRAP,
-                               G_TX_MIRROR | G_TX_WRAP, 7, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment[TEXTBOX_SEG_TYPE], G_IM_FMT_IA, 128, 64, 0,
+                               G_TX_MIRROR | G_TX_WRAP, G_TX_MIRROR | G_TX_WRAP, 7, G_TX_NOMASK, G_TX_NOLOD,
+                               G_TX_NOLOD);
     }
 
     if (msgCtx->textBoxType == TEXTBOX_TYPE_A) {
@@ -4530,7 +4524,9 @@ void Message_DrawSceneTitleCard(PlayState* play, Gfx** gfxP) {
     // gSPTextureRectangle(gfx++, 0, XREG(77) << 2, 320 << 2, (XREG(77) + XREG(76)) << 2, G_TX_RENDERTILE, 0, 0, 204,
     //                     1 << 10);
     f32 tileOffset = 204.0f / ((320.0f + (OTRGetDimensionFromRightEdge(0) * 2.0f)) / 320.0f);
-    gSPWideTextureRectangle(gfx++, OTRGetRectDimensionFromLeftEdge(0) << 2, XREG(77) << 2, OTRGetRectDimensionFromRightEdge(320) << 2, (XREG(77) + XREG(76)) << 2, G_TX_RENDERTILE, 8, 0, (u32)tileOffset - 1, 1 << 10);
+    gSPWideTextureRectangle(gfx++, OTRGetRectDimensionFromLeftEdge(0) << 2, XREG(77) << 2,
+                            OTRGetRectDimensionFromRightEdge(320) << 2, (XREG(77) + XREG(76)) << 2, G_TX_RENDERTILE, 8,
+                            0, (u32)tileOffset - 1, 1 << 10);
     // #endregion
     gDPPipeSync(gfx++);
     gDPSetCombineLERP(gfx++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
@@ -4842,7 +4838,8 @@ void Message_DrawMain(PlayState* play, Gfx** gfxP) {
                         AudioOcarina_SetOcarinaDisableTimer(0, 20);
                         Message_CloseTextbox(play);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_PLAYED_FULL_EVAN_SONG;
-                    } else if (GameInteractor_Should(GI_VB_SONG_AVAILABLE_TO_PLAY, vanillaOwnedSongCheck, &msgCtx->ocarinaStaff->state)) {
+                    } else if (GameInteractor_Should(GI_VB_SONG_AVAILABLE_TO_PLAY, vanillaOwnedSongCheck,
+                                                     &msgCtx->ocarinaStaff->state)) {
                         sLastPlayedSong = msgCtx->ocarinaStaff->state;
                         msgCtx->lastPlayedSong = msgCtx->ocarinaStaff->state;
                         msgCtx->songPlayed = msgCtx->ocarinaStaff->state;
@@ -5309,7 +5306,7 @@ void Message_DrawMain(PlayState* play, Gfx** gfxP) {
                     msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_RECORDING_DONE;
                     Audio_PlaySfx(NA_SE_SY_TRE_BOX_APPEAR);
                     memcpy(gSaveContext.save.saveInfo.scarecrowSpawnSong, gScarecrowSpawnSongPtr,
-                               sizeof(gSaveContext.save.saveInfo.scarecrowSpawnSong));
+                           sizeof(gSaveContext.save.saveInfo.scarecrowSpawnSong));
                     for (i = 0; i < ARRAY_COUNT(gSaveContext.save.saveInfo.scarecrowSpawnSong); i++) {
                         // osSyncPrintf("%d, ", gSaveContext.scarecrowSpawnSong[i]);
                     }
@@ -5899,11 +5896,12 @@ void Message_Update(PlayState* play) {
 
         case MSGMODE_TEXT_DISPLAYING:
             if (msgCtx->textBoxType != TEXTBOX_TYPE_4) {
-                if ((
-                    CHECK_BTN_ALL(input->press.button, BTN_B) ||
-                    // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was just pressed
-                    (CVarGetInteger("gEnhancements.Dialogue.FastText", 0) && CHECK_BTN_ALL(input->cur.button, BTN_B))
-                ) && !msgCtx->textUnskippable) {
+                if ((CHECK_BTN_ALL(input->press.button, BTN_B) ||
+                     // 2S2H [Enhancement] When fast text is on, we want to check if B is held instead of only if it was
+                     // just pressed
+                     (CVarGetInteger("gEnhancements.Dialogue.FastText", 0) &&
+                      CHECK_BTN_ALL(input->cur.button, BTN_B))) &&
+                    !msgCtx->textUnskippable) {
                     msgCtx->textboxSkipped = true;
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 } else if (CHECK_BTN_ALL(input->press.button, BTN_A) && !msgCtx->textUnskippable) {

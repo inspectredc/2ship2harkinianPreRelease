@@ -4327,7 +4327,8 @@ void Font_LoadOrderedFont(Font* font) {
             loadOffset = 0;
         }
 
-        // DmaMgr_SendRequest0(writeLocation, (uintptr_t)SEGMENT_ROM_START(nes_font_static) + loadOffset, FONT_CHAR_TEX_SIZE);
+        // DmaMgr_SendRequest0(writeLocation, (uintptr_t)SEGMENT_ROM_START(nes_font_static) + loadOffset,
+        // FONT_CHAR_TEX_SIZE);
         memcpy(writeLocation, fontTbl[loadOffset], strlen(fontTbl[loadOffset]) + 1);
         // #endregion
 

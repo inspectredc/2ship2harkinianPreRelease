@@ -1668,7 +1668,7 @@ void OTRPlay_InitScene(PlayState* play, s32 spawn);
 
 void Play_InitScene(PlayState* this, s32 spawn) {
     OTRPlay_InitScene(this, spawn);
-    #if 0
+#if 0
     this->curSpawn = spawn;
     this->linkActorEntry = NULL;
     this->actorCsCamList = NULL;
@@ -1686,7 +1686,7 @@ void Play_InitScene(PlayState* this, s32 spawn) {
     gSaveContext.worldMapArea = 0;
     Scene_ExecuteCommands(this, this->sceneSegment);
     Play_InitEnvironment(this, this->skyboxId);
-    #endif
+#endif
 }
 
 void OTRPlay_SpawnScene(PlayState* play, s32 sceneId, s32 spawn);
@@ -2347,7 +2347,8 @@ void Play_Init(GameState* thisx) {
 
     sceneLayer = gSaveContext.sceneLayer;
 
-    s32 sceneIdAbsolute = Entrance_GetSceneIdAbsolute(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer));
+    s32 sceneIdAbsolute =
+        Entrance_GetSceneIdAbsolute(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer));
     s32 spawnNum = Entrance_GetSpawnNum(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer));
     Play_SpawnScene(this, sceneIdAbsolute, spawnNum);
 

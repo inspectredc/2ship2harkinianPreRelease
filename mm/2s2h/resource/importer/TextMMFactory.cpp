@@ -64,4 +64,4 @@ std::shared_ptr<Ship::IResource> ResourceFactoryXMLTextMMV0::ReadResource(std::s
 
     return text;
 }
-} // namespace LUS
+} // namespace SOH
